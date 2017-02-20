@@ -4,46 +4,11 @@
 #include <LCDColors.h>
 #include <FEHBuzzer.h>
 #include <FEHMotor.h>
+#include <FEHRPS.h>
 
 //Our own classes.
 //#include "mainmenu.h"
-
-#define NUM_MENU_BUTTONS 6
-
-#define TEXT_COLOR 0x4f2f2f
-
-#define BASE_MOTOR_POWER 20
-
-#define LEFT_STRAIGHT .935
-#define CENTER_STRAIGHT .585
-#define RIGHT_STRAIGHT .735
-#define LEFT_BG 1.6
-#define CENTER_BG 1.33
-#define RIGHT_BG 1.58
-#define LEFT_CURVE 2.33
-#define CENTER_CURVE 2.13
-#define RIGHT_CURVE 2.2
-#define LEFT_BGC .35
-#define CENTER_BGC .198
-#define RIGHT_BGC .221
-
-enum LineStates {
-    LINE_ON_RIGHT,
-    ON_LINE_FIRST,
-    LINE_ON_LEFT,
-    ON_LINE_SECOND,
-    NOT_ON_LINE
-};
-
-
-void displayMenu();
-void run_final();
-void test_1();
-void test_2();
-void play_music();
-void measure_optosensors();
-void follow_straight_line();
-void follow_curve();
+#include <robotdefinitions.h>
 
 AnalogInputPin rightOpto(FEHIO::P0_1);
 AnalogInputPin centerOpto(FEHIO::P0_2);
@@ -51,6 +16,10 @@ AnalogInputPin leftOpto(FEHIO::P0_3);
 
 FEHMotor leftMotor(FEHMotor::Motor0, 12.0);
 FEHMotor rightMotor(FEHMotor::Motor1, 12.0);
+
+DigitalEncoder leftEncoder(FEHIO::P1_1);
+DigitalEncoder rightEncoder(FEHIO::P1_0);
+
 
 int main(void)
 {
@@ -66,7 +35,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "Test", "Test Again", "Test3", "Test4"};
+    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "Test", "Test Again", "Test3", "Idk"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -76,11 +45,12 @@ void displayMenu() {
             if(buttons[0].Pressed(x,y,0)) {
                 run_final();
             } else if(buttons[1].Pressed(x,y,0)) {
-                play_music();
+                RPS.InitializeTouchMenu();
+                FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
             } else if(buttons[2].Pressed(x,y,0)) {
                 test_1();
             } else if(buttons[3].Pressed(x,y,0)) {
-                test_2();
+                follow_straight_line();
             } else if(buttons[4].Pressed(x,y,0)) {
                 follow_curve();
             }
@@ -99,7 +69,6 @@ void test_1() {
 }
 
 void test_2() {
-    follow_straight_line();
 }
 
 
@@ -192,6 +161,61 @@ void follow_curve() {
         break;
         }
     }
+}
+
+void encoderForward(int percent, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+
+    rightMotor.SetPercent(percent);
+    leftMotor.SetPercent(percent);
+
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts);
+
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void encoderLeftTurn(int motorPower, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+
+    leftMotor.SetPercent(-motorPower);
+    rightMotor.SetPercent(motorPower);
+
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts);
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void encoderRightTurn(int motorPower, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+
+    leftMotor.SetPercent(motorPower);
+    rightMotor.SetPercent(-motorPower);
+
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts);
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void leftTurnRPS(float finalheading, float power) {
+    while(RPS.Heading() < finalheading) {
+        leftMotor.SetPercent(-power);
+        rightMotor.SetPercent(power);
+    }
+    leftMotor.SetPercent(0);
+    rightMotor.SetPercent(0);
+}
+
+void rightTurnRPS(float finalheading, float power) {
+    while(RPS.Heading() < finalheading) {
+        rightMotor.SetPercent(-power);
+        leftMotor.SetPercent(power);
+    }
+    rightMotor.SetPercent(0);
+    leftMotor.SetPercent(0);
 }
 
 void play_music() {

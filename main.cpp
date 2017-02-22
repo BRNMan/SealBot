@@ -35,7 +35,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "Test", "Test Again", "Test3", "Idk"};
+    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "TestTurn", "TestRun", "Test3", "Idk"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -50,9 +50,20 @@ void displayMenu() {
             } else if(buttons[2].Pressed(x,y,0)) {
                 test_1();
             } else if(buttons[3].Pressed(x,y,0)) {
-                follow_straight_line();
+                test_2();
             } else if(buttons[4].Pressed(x,y,0)) {
-                follow_curve();
+                LCD.WriteLine("Forward");
+                encoderForward(20, 10*COUNTS_PER_INCH);
+                LCD.WriteLine("Left Turn");
+                encoderLeftTurn(20, 10*COUNTS_PER_INCH);
+                LCD.WriteLine("Right Turn");
+                encoderRightTurn(20, 10*COUNTS_PER_INCH);
+                LCD.WriteLine("Stop");
+                leftMotor.Stop();
+                rightMotor.Stop();
+                Sleep(2.);
+                LCD.WriteLine("Beverly Hills Cop");
+                play_music();
             }
 
     }
@@ -65,12 +76,29 @@ void run_final() {
 
 void test_1() {
     LCD.WriteLine("Hello World!");
-    measure_optosensors();
+    //Test
+    encoderForward(BASE_MOTOR_POWER, 4*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 20*COUNTS_PER_INCH);
+
 }
 
 void test_2() {
+    moveStartToButton();
 }
 
+
+void moveStartToButton() {
+    encoderForward(20, 6*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 10*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 4*COUNTS_PER_INCH);
+    encoderForward(30, 3*COUNTS_PER_INCH);
+    encoderForward(40, 3*COUNTS_PER_INCH);
+    encoderForward(30, 3*COUNTS_PER_INCH);
+    encoderForward(20, 3*COUNTS_PER_INCH);
+}
 
 void measure_optosensors() {
     while(true) {
@@ -81,6 +109,15 @@ void measure_optosensors() {
         LCD.WriteAt("Left opto:   ", 10, 50);
         LCD.WriteAt(leftOpto.Value(), 140, 50);
     }
+}
+
+void measure_optosensors1() {
+    LCD.WriteAt("Right opto:  ", 10, 10);
+    LCD.WriteAt(rightOpto.Value(), 140, 10);
+    LCD.WriteAt("Center opto: ", 10, 30);
+    LCD.WriteAt(centerOpto.Value(), 140, 30);
+    LCD.WriteAt("Left opto:   ", 10, 50);
+    LCD.WriteAt(leftOpto.Value(), 140, 50);
 }
 
 void follow_straight_line() {

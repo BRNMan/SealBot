@@ -33,10 +33,12 @@ enum LineStates {
 };
 
 //IGWAN encoder counts
-#define COUNTS_PER_INCH 41
-#define COUNTS_PER_90_DEGREES 200
+#define COUNTS_PER_INCH 28
+#define COUNTS_PER_90_DEGREES 113
+//Left wheel turns more, so subtract this value from the counts for a right turn
+#define RTURN_OFFSET 10
 
-
+void post();
 void displayMenu();
 void run_final();
 void test_1();

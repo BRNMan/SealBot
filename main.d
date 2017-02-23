@@ -14,7 +14,8 @@
  C:\fehqt\Proteus/EWL/EWL_C/include/ewl_lib_ext1.h Libraries/FEHUtility.h \
  Startup/derivative.h Libraries/LCDColors.h Libraries/FEHIO.h \
  Drivers/adc16.h Libraries/FEHBuzzer.h Libraries/FEHMotor.h \
- Libraries/FEHRPS.h Drivers/FEHXBee.h ../robotdefinitions.h
+ Libraries/FEHRPS.h Drivers/FEHXBee.h Libraries/FEHBattery.h \
+ Libraries/FEHIO.h ../robotdefinitions.h
 
 C:\fehqt\Proteus/EWL/EWL_C++/include/lib_ewl_c++.prefix:
 
@@ -65,5 +66,9 @@ Libraries/FEHMotor.h:
 Libraries/FEHRPS.h:
 
 Drivers/FEHXBee.h:
+
+Libraries/FEHBattery.h:
+
+Libraries/FEHIO.h:
 
 ../robotdefinitions.h:

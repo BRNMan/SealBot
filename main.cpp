@@ -5,6 +5,7 @@
 #include <FEHBuzzer.h>
 #include <FEHMotor.h>
 #include <FEHRPS.h>
+#include <FEHBattery.h>
 
 //Our own classes.
 //#include "mainmenu.h"
@@ -17,15 +18,33 @@ AnalogInputPin leftOpto(FEHIO::P0_3);
 FEHMotor leftMotor(FEHMotor::Motor0, 12.0);
 FEHMotor rightMotor(FEHMotor::Motor1, 12.0);
 
-DigitalEncoder leftEncoder(FEHIO::P1_1);
-DigitalEncoder rightEncoder(FEHIO::P1_0);
+DigitalEncoder leftEncoder(FEHIO::P3_7);
+DigitalEncoder rightEncoder(FEHIO::P0_0);
 
+AnalogInputPin cdsCell(FEHIO::P0_1);
 
 int main(void)
 {
+    //hardware check
+    //post();
     //Go to the main menu after startup.
     displayMenu();
     return 0;
+}
+
+//Power On Self Test
+void post() {
+    LCD.Clear(BLACK);
+    LCD.SetFontColor(WHITE);
+    encoderForward(10, 10);
+    LCD.WriteLine("Left Counts: ");
+    LCD.Write(leftEncoder.Counts());
+    LCD.WriteLine("Right Counts: ");
+    LCD.Write(leftEncoder.Counts());
+    LCD.WriteLine("Battery Voltage: ");
+    LCD.Write(Battery.Voltage());
+    encoderForward(-10, 10);
+    Sleep(2.);
 }
 
 void displayMenu() {
@@ -35,7 +54,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "TestTurn", "TestRun", "Test3", "Idk"};
+    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "TestTurn", "TestRun", "Test3", "CheckWheels"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -52,12 +71,24 @@ void displayMenu() {
             } else if(buttons[3].Pressed(x,y,0)) {
                 test_2();
             } else if(buttons[4].Pressed(x,y,0)) {
+
+            } else if(buttons[5].Pressed(x,y,0)) {
                 LCD.WriteLine("Forward");
-                encoderForward(20, 10*COUNTS_PER_INCH);
+                encoderForward(30, 10*COUNTS_PER_INCH);
                 LCD.WriteLine("Left Turn");
-                encoderLeftTurn(20, 10*COUNTS_PER_INCH);
+                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
+                LCD.WriteLine("Forward");
+                encoderForward(30, 10*COUNTS_PER_INCH);
                 LCD.WriteLine("Right Turn");
-                encoderRightTurn(20, 10*COUNTS_PER_INCH);
+                encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
+                LCD.WriteLine("Forward");
+                encoderForward(30, 10*COUNTS_PER_INCH);
+                LCD.WriteLine("Right Turn");
+                encoderRightTurn(30, COUNTS_PER_90_DEGREES);
+                LCD.WriteLine("Forward");
+                encoderForward(30, 10*COUNTS_PER_INCH);
+                LCD.WriteLine("Right Turn");
+                encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
                 LCD.WriteLine("Stop");
                 leftMotor.Stop();
                 rightMotor.Stop();
@@ -72,13 +103,17 @@ void displayMenu() {
 
 void run_final() {
     LCD.WriteLine("For all the marbles.");
+    moveStartToButton();
 }
 
 void test_1() {
     LCD.WriteLine("Hello World!");
     //Test
+    LCD.WriteLine("Forward");
     encoderForward(BASE_MOTOR_POWER, 4*COUNTS_PER_INCH);
+    LCD.WriteLine("Right");
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    LCD.WriteLine("Forward");
     encoderForward(20, 20*COUNTS_PER_INCH);
 
 }
@@ -87,17 +122,28 @@ void test_2() {
     moveStartToButton();
 }
 
-
 void moveStartToButton() {
+    LCD.WriteLine("We have liftoff!");
+    //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, 10*COUNTS_PER_INCH);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 8*COUNTS_PER_INCH);
+    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+    //Up ramp
     encoderForward(20, 4*COUNTS_PER_INCH);
-    encoderForward(30, 3*COUNTS_PER_INCH);
-    encoderForward(40, 3*COUNTS_PER_INCH);
-    encoderForward(30, 3*COUNTS_PER_INCH);
-    encoderForward(20, 3*COUNTS_PER_INCH);
+    encoderForward(40, 4*COUNTS_PER_INCH);
+    encoderForward(50, 4*COUNTS_PER_INCH);
+    encoderForward(40, 6*COUNTS_PER_INCH);
+    encoderForward(20, 2*COUNTS_PER_INCH);
+    //To button
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 5*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 20*COUNTS_PER_INCH);
+    //Back up
+    encoderForward(20, -6*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 12*COUNTS_PER_INCH);
 }
 
 void measure_optosensors() {
@@ -207,7 +253,14 @@ void encoderForward(int percent, int counts) {
     rightMotor.SetPercent(percent);
     leftMotor.SetPercent(percent);
 
-    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts);
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts) {
+        //Test code
+        /*LCD.WriteLine("Left: ");
+        LCD.WriteLine(leftEncoder.Counts());
+        LCD.WriteLine("Righ: ");
+        LCD.WriteLine(rightEncoder.Counts());*/
+    }
+
 
     rightMotor.Stop();
     leftMotor.Stop();
@@ -232,7 +285,8 @@ void encoderRightTurn(int motorPower, int counts) {
     leftMotor.SetPercent(motorPower);
     rightMotor.SetPercent(-motorPower);
 
-    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts);
+    //Turns the wheels a certain distance modified by a wheel offset.
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts - RTURN_OFFSET*counts/COUNTS_PER_90_DEGREES);
     rightMotor.Stop();
     leftMotor.Stop();
 }
@@ -256,27 +310,27 @@ void rightTurnRPS(float finalheading, float power) {
 }
 
 void play_music() {
-    Buzzer.Tone(FEHBuzzer::A3, 200);
-    Buzzer.Tone(FEHBuzzer::C4, 200);
-    Buzzer.Tone(FEHBuzzer::A3, 150);
-    Buzzer.Tone(FEHBuzzer::A3, 50);
-    Buzzer.Tone(FEHBuzzer::D4, 100);
-    Buzzer.Tone(FEHBuzzer::G3, 100);
-    Buzzer.Tone(FEHBuzzer::F3, 100);
-    Buzzer.Tone(FEHBuzzer::A3, 200);
-    Buzzer.Tone(FEHBuzzer::E4, 200);
-    Buzzer.Tone(FEHBuzzer::A3, 150);
-    Buzzer.Tone(FEHBuzzer::A3, 50);
+    Buzzer.Tone(FEHBuzzer::A4, 200);
+    Buzzer.Tone(FEHBuzzer::C5, 200);
+    Buzzer.Tone(FEHBuzzer::A4, 150);
+    Buzzer.Tone(FEHBuzzer::A4, 50);
+    Buzzer.Tone(FEHBuzzer::D5, 100);
+    Buzzer.Tone(FEHBuzzer::G4, 100);
     Buzzer.Tone(FEHBuzzer::F4, 100);
-    Buzzer.Tone(FEHBuzzer::E4, 100);
-    Buzzer.Tone(FEHBuzzer::C4, 100);
-    Buzzer.Tone(FEHBuzzer::A3, 100);
+    Buzzer.Tone(FEHBuzzer::A4, 200);
+    Buzzer.Tone(FEHBuzzer::E5, 200);
+    Buzzer.Tone(FEHBuzzer::A4, 150);
+    Buzzer.Tone(FEHBuzzer::A4, 50);
+    Buzzer.Tone(FEHBuzzer::F5, 100);
+    Buzzer.Tone(FEHBuzzer::E5, 100);
     Buzzer.Tone(FEHBuzzer::C4, 100);
     Buzzer.Tone(FEHBuzzer::A4, 100);
-    Buzzer.Tone(FEHBuzzer::G3, 150);
-    Buzzer.Tone(FEHBuzzer::G3, 50);
-    Buzzer.Tone(FEHBuzzer::E3, 100);
-    Buzzer.Tone(FEHBuzzer::B3, 100);
-    Buzzer.Tone(FEHBuzzer::A3, 200);
+    Buzzer.Tone(FEHBuzzer::C5, 100);
+    Buzzer.Tone(FEHBuzzer::A5, 100);
+    Buzzer.Tone(FEHBuzzer::G4, 150);
+    Buzzer.Tone(FEHBuzzer::G4, 50);
+    Buzzer.Tone(FEHBuzzer::E4, 100);
+    Buzzer.Tone(FEHBuzzer::B4, 100);
+    Buzzer.Tone(FEHBuzzer::A4, 200);
 
 }

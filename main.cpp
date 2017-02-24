@@ -71,7 +71,7 @@ void displayMenu() {
             } else if(buttons[3].Pressed(x,y,0)) {
                 test_2();
             } else if(buttons[4].Pressed(x,y,0)) {
-
+                post();
             } else if(buttons[5].Pressed(x,y,0)) {
                 LCD.WriteLine("Forward");
                 encoderForward(30, 10*COUNTS_PER_INCH);
@@ -102,7 +102,7 @@ void displayMenu() {
 }
 
 void run_final() {
-    LCD.WriteLine("For all the marbles.");
+    waitForLight();
     moveStartToButton();
 }
 
@@ -119,6 +119,11 @@ void test_1() {
 }
 
 void test_2() {
+    Sleep(0.5);
+    float x, y;
+    while(!LCD.Touch(&x, &y)) {
+        LCD.WriteLine(cdsCell.Value());
+    }
     moveStartToButton();
 }
 
@@ -127,23 +132,23 @@ void moveStartToButton() {
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, 8*COUNTS_PER_INCH);
+    encoderForward(20, 7*COUNTS_PER_INCH);
     encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
     //Up ramp
-    encoderForward(20, 4*COUNTS_PER_INCH);
-    encoderForward(40, 4*COUNTS_PER_INCH);
-    encoderForward(50, 4*COUNTS_PER_INCH);
+    encoderForward(32, 30, 4*COUNTS_PER_INCH);
+    encoderForward(42, 40, 4*COUNTS_PER_INCH);
+    encoderForward(50, 48, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
-    encoderForward(20, 2*COUNTS_PER_INCH);
+    encoderForward(30, 2*COUNTS_PER_INCH);
     //To button
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
     encoderForward(20, 5*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
     encoderForward(20, 20*COUNTS_PER_INCH);
     //Back up
-    encoderForward(20, -6*COUNTS_PER_INCH);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, 12*COUNTS_PER_INCH);
+    encoderForward(-20, 7*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(-20, 12*COUNTS_PER_INCH);
 }
 
 void measure_optosensors() {
@@ -252,15 +257,23 @@ void encoderForward(int percent, int counts) {
 
     rightMotor.SetPercent(percent);
     leftMotor.SetPercent(percent);
-
-    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts) {
-        //Test code
-        /*LCD.WriteLine("Left: ");
-        LCD.WriteLine(leftEncoder.Counts());
-        LCD.WriteLine("Righ: ");
-        LCD.WriteLine(rightEncoder.Counts());*/
+    float startTime = TimeNow();
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
     }
 
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void encoderForward(int leftPercent, int rightPercent, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+
+    rightMotor.SetPercent(rightPercent);
+    leftMotor.SetPercent(leftPercent);
+    float startTime = TimeNow();
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+    }
 
     rightMotor.Stop();
     leftMotor.Stop();
@@ -309,6 +322,10 @@ void rightTurnRPS(float finalheading, float power) {
     leftMotor.SetPercent(0);
 }
 
+void waitForLight() {
+    while(cdsCell.Value() > 1 + CDS_RED);
+}
+
 void play_music() {
     Buzzer.Tone(FEHBuzzer::A4, 200);
     Buzzer.Tone(FEHBuzzer::C5, 200);
@@ -332,5 +349,10 @@ void play_music() {
     Buzzer.Tone(FEHBuzzer::E4, 100);
     Buzzer.Tone(FEHBuzzer::B4, 100);
     Buzzer.Tone(FEHBuzzer::A4, 200);
+}
 
+void showOff() {
+    encoderForward(20, 4*COUNTS_PER_INCH);
+    leftMotor.SetPercent(-25.);
+    rightMotor.SetPercent(25.);
 }

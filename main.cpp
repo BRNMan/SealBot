@@ -326,6 +326,27 @@ void waitForLight() {
     while(cdsCell.Value() > 1 + CDS_RED);
 }
 
+void displayColor();
+void displayColor() {
+    if(cdsCell.Value() < 1 + CDS_RED) {
+        LCD.SetBackgroundColor(SCARLET);
+        LCD.SetBackgroundColor(MAROON);
+        LCD.SetBackgroundColor(DARKRED);
+        LCD.SetBackgroundColor(SIENNA);
+        LCD.SetBackgroundColor(FIREBRICK);
+        LCD.SetBackgroundColor(MEDIUMVIOLETRED);
+        LCD.SetBackgroundColor(INDIANRED);
+        LCD.SetBackgroundColor(CRIMSON);
+        LCD.SetBackgroundColor(DARKSALMON);
+        LCD.SetBackgroundColor(ORANGERED);
+        LCD.SetBackgroundColor(TOMATO);
+        LCD.SetBackgroundColor(CORAL);
+        LCD.SetBackgroundColor(RED);
+        LCD.SetFontColor(BLUE);
+        LCD.WriteLine("ITS RED! REEEEEDDDDDDDDD!!!!");
+    }
+}
+
 void play_music() {
     Buzzer.Tone(FEHBuzzer::A4, 200);
     Buzzer.Tone(FEHBuzzer::C5, 200);

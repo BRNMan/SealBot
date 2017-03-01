@@ -45,6 +45,11 @@ enum LineStates {
 #define CDS_BLUE 2.0
 #define CDS_NONE 3.0
 
+//Yaw Servo Defines
+#define SERVO_MAX 2355
+#define SERVO_MIN 500
+#define PARALLEL_ANGLE 60.
+
 void post();
 void displayMenu();
 void run_final();
@@ -55,8 +60,11 @@ void measure_optosensors();
 void follow_straight_line();
 void follow_curve();
 
+//Specific Navigation
 void moveStartToButton();
+void moveStartToLever();
 
+//General navigation
 void encoderForward(int percent, int counts);
 void encoderForward(int leftPercent, int rightPercent, int counts);
 
@@ -65,6 +73,7 @@ void encoderRightTurn(int motorPower, int counts);
 
 void leftTurnRPS(float finalheading, float power);
 void rightTurnRPS(float finalheading, float power);
+void RPSMoveTo(float x, float y, float power);
 
 void waitForLight();
 

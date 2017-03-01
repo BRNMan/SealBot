@@ -15,7 +15,19 @@
  Startup/derivative.h Libraries/LCDColors.h Libraries/FEHIO.h \
  Drivers/adc16.h Libraries/FEHBuzzer.h Libraries/FEHMotor.h \
  Libraries/FEHRPS.h Drivers/FEHXBee.h Libraries/FEHBattery.h \
- Libraries/FEHIO.h ../robotdefinitions.h
+ Libraries/FEHIO.h Libraries/FEHServo.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/math.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/cmath \
+ C:\fehqt\Proteus/EWL/EWL_C/include/cfloat \
+ C:\fehqt\Proteus/EWL/EWL_C/include/ewl_t.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/arm/float.ARM.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/math_api.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/ewl_misra_types.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/math_inlines.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/math_config.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/arm/math.ARM.h \
+ C:\fehqt\Proteus/EWL/EWL_C/include/cerrno \
+ C:\fehqt\Proteus/EWL/EWL_C/include/math_integral.h ../robotdefinitions.h
 
 C:\fehqt\Proteus/EWL/EWL_C++/include/lib_ewl_c++.prefix:
 
@@ -70,5 +82,31 @@ Drivers/FEHXBee.h:
 Libraries/FEHBattery.h:
 
 Libraries/FEHIO.h:
+
+Libraries/FEHServo.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/math.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/cmath:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/cfloat:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/ewl_t.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/arm/float.ARM.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/math_api.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/ewl_misra_types.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/math_inlines.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/math_config.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/arm/math.ARM.h:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/cerrno:
+
+C:\fehqt\Proteus/EWL/EWL_C/include/math_integral.h:
 
 ../robotdefinitions.h:

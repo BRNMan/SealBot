@@ -6,14 +6,16 @@
 #include <FEHMotor.h>
 #include <FEHRPS.h>
 #include <FEHBattery.h>
+#include <FEHServo.h>
+#include <math.h>
 
 //Our own classes.
 //#include "mainmenu.h"
 #include <robotdefinitions.h>
 
-AnalogInputPin rightOpto(FEHIO::P0_1);
-AnalogInputPin centerOpto(FEHIO::P0_2);
-AnalogInputPin leftOpto(FEHIO::P0_3);
+AnalogInputPin rightOpto(FEHIO::P1_1);
+AnalogInputPin centerOpto(FEHIO::P1_2);
+AnalogInputPin leftOpto(FEHIO::P1_3);
 
 FEHMotor leftMotor(FEHMotor::Motor0, 12.0);
 FEHMotor rightMotor(FEHMotor::Motor1, 12.0);
@@ -23,11 +25,17 @@ DigitalEncoder rightEncoder(FEHIO::P0_0);
 
 AnalogInputPin cdsCell(FEHIO::P0_1);
 
+FEHServo yawServo(FEHServo::Servo0);
+FEHServo rollServo(FEHServo::Servo1);
+
 int main(void)
 {
     //hardware check
     //post();
     //Go to the main menu after startup.
+    yawServo.SetMin(SERVO_MIN);
+    yawServo.SetMax(SERVO_MAX);
+    yawServo.SetDegree(PARALLEL_ANGLE);
     displayMenu();
     return 0;
 }
@@ -54,7 +62,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "Calibrate", "TestTurn", "TestRun", "Test3", "CheckWheels"};
+    char labels[NUM_MENU_BUTTONS][20] = {"Run", "CalRPS", "CalServ", "TestRun", "LineStr", "CheckWheels"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -71,7 +79,7 @@ void displayMenu() {
             } else if(buttons[3].Pressed(x,y,0)) {
                 test_2();
             } else if(buttons[4].Pressed(x,y,0)) {
-                post();
+                follow_straight_line();
             } else if(buttons[5].Pressed(x,y,0)) {
                 LCD.WriteLine("Forward");
                 encoderForward(30, 10*COUNTS_PER_INCH);
@@ -107,15 +115,7 @@ void run_final() {
 }
 
 void test_1() {
-    LCD.WriteLine("Hello World!");
-    //Test
-    LCD.WriteLine("Forward");
-    encoderForward(BASE_MOTOR_POWER, 4*COUNTS_PER_INCH);
-    LCD.WriteLine("Right");
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
-    LCD.WriteLine("Forward");
-    encoderForward(20, 20*COUNTS_PER_INCH);
-
+    yawServo.TouchCalibrate();
 }
 
 void test_2() {
@@ -124,7 +124,7 @@ void test_2() {
     while(!LCD.Touch(&x, &y)) {
         LCD.WriteLine(cdsCell.Value());
     }
-    moveStartToButton();
+    moveStartToLever();
 }
 
 void moveStartToButton() {
@@ -149,6 +149,24 @@ void moveStartToButton() {
     encoderForward(-20, 7*COUNTS_PER_INCH);
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
     encoderForward(-20, 12*COUNTS_PER_INCH);
+}
+
+void moveStartToLever() {
+    //Around wall
+    encoderForward(20, 6*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 7*COUNTS_PER_INCH);
+    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+    //Up ramp
+    encoderForward(32, 30, 4*COUNTS_PER_INCH);
+    encoderForward(42, 40, 4*COUNTS_PER_INCH);
+    encoderForward(50, 48, 4*COUNTS_PER_INCH);
+    encoderForward(40, 6*COUNTS_PER_INCH);
+    encoderForward(30, 2*COUNTS_PER_INCH);
+    //To lever
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(-20, 6*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
 }
 
 void measure_optosensors() {
@@ -320,6 +338,16 @@ void rightTurnRPS(float finalheading, float power) {
     }
     rightMotor.SetPercent(0);
     leftMotor.SetPercent(0);
+}
+
+void RPSMoveTo(float x, float y, float power) {
+    float curX = RPS.X();
+    float curY = RPS.Y();
+    float theta = atan2f(y - curY, x - curX);
+    rightTurnRPS(theta, power);
+    leftMotor.SetPercent(power);
+    rightMotor.SetPercent(power);
+    while(abs(x - RPS.X()) > 1 && abs(y - RPS.Y()) > 1);
 }
 
 void waitForLight() {

@@ -41,14 +41,15 @@ enum LineStates {
 #define RTURN_OFFSET 15
 
 //CDS Cell readings for different lights with no filter.
-#define CDS_RED .760
-#define CDS_BLUE 2.0
+#define CDS_RED .3
+#define CDS_BLUE .8
 #define CDS_NONE 3.0
 
 //Yaw Servo Defines
 #define SERVO_MAX 2355
 #define SERVO_MIN 500
 #define PARALLEL_ANGLE 60.
+#define LEVER_ANGLE 35
 
 void post();
 void displayMenu();
@@ -76,6 +77,7 @@ void rightTurnRPS(float finalheading, float power);
 void RPSMoveTo(float x, float y, float power);
 
 void waitForLight();
+void displayColor();
 
 void showOff();
 

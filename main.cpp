@@ -35,7 +35,6 @@ int main(void)
     //Go to the main menu after startup.
     yawServo.SetMin(SERVO_MIN);
     yawServo.SetMax(SERVO_MAX);
-    yawServo.SetDegree(PARALLEL_ANGLE);
     displayMenu();
     return 0;
 }
@@ -111,7 +110,7 @@ void displayMenu() {
 
 void run_final() {
     waitForLight();
-    moveStartToButton();
+    moveStartToLever();
 }
 
 void test_1() {
@@ -130,7 +129,7 @@ void test_2() {
 void moveStartToButton() {
     LCD.WriteLine("We have liftoff!");
     //Around wall
-    encoderForward(20, 6*COUNTS_PER_INCH);
+    encoderForward(30, 6*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
     encoderForward(20, 7*COUNTS_PER_INCH);
     encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
@@ -154,19 +153,30 @@ void moveStartToButton() {
 void moveStartToLever() {
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    displayColor();
+    encoderForward(20, 1*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, 7*COUNTS_PER_INCH);
+    encoderForward(20, 2*COUNTS_PER_INCH);
+    displayColor();
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    displayColor();
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    displayColor();
+    encoderForward(20, 3*COUNTS_PER_INCH);
     encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
     //Up ramp
     encoderForward(32, 30, 4*COUNTS_PER_INCH);
     encoderForward(42, 40, 4*COUNTS_PER_INCH);
     encoderForward(50, 48, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
-    encoderForward(30, 2*COUNTS_PER_INCH);
+    encoderForward(30, 1*COUNTS_PER_INCH);
     //To lever
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(-20, 6*COUNTS_PER_INCH);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    //Backs up to lever, flips servo after 3 seconds, and moves forward.
+    encoderForwardWall(-20, -20, 6*COUNTS_PER_INCH, 3.);
+    yawServo.SetDegree(LEVER_ANGLE);
+    encoderForward(20, 3*COUNTS_PER_INCH);
 }
 
 void measure_optosensors() {
@@ -290,11 +300,34 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
     rightMotor.SetPercent(rightPercent);
     leftMotor.SetPercent(leftPercent);
     float startTime = TimeNow();
+    //Moves on, just in case.
     while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
     }
 
     rightMotor.Stop();
     leftMotor.Stop();
+}
+
+//This one is only used for the times when it hits a wall and stops, to make sure it can back up.
+void encoderForwardWall(int leftPercent, int rightPercent, int counts, int backTime) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+    rightMotor.SetPercent(rightPercent);
+    leftMotor.SetPercent(leftPercent);
+    float startTime = TimeNow();
+    //Moves on after specified time
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < backTime) {
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+//TODO: Accelerates forward amount specified by counts at maximum power of power.
+void encoderAccelForward(int power, int counts);
+void encoderAccelForward(int power, int counts) {
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
+
+    }
 }
 
 void encoderLeftTurn(int motorPower, int counts) {
@@ -322,6 +355,7 @@ void encoderRightTurn(int motorPower, int counts) {
     leftMotor.Stop();
 }
 
+//CCW Turn
 void leftTurnRPS(float finalheading, float power) {
     while(RPS.Heading() < finalheading) {
         leftMotor.SetPercent(-power);
@@ -331,6 +365,7 @@ void leftTurnRPS(float finalheading, float power) {
     rightMotor.SetPercent(0);
 }
 
+//Clockwise turn
 void rightTurnRPS(float finalheading, float power) {
     while(RPS.Heading() < finalheading) {
         rightMotor.SetPercent(-power);
@@ -340,11 +375,27 @@ void rightTurnRPS(float finalheading, float power) {
     leftMotor.SetPercent(0);
 }
 
+void turnRPS(float finalHeading, float power) {
+    if(RPS.Heading() > 180.0) {
+        if(finalHeading < (RPS.Heading() - 180.0) || finalHeading < RPS.Heading()) {
+            leftTurnRPS(finalHeading, power);
+        } else {
+            rightTurnRPS(finalHeading, power);
+        }
+    } else {
+        if(finalHeading > (RPS.Heading() + 180.0) || finalHeading < RPS.Heading()) {
+            rightTurnRPS(finalHeading, power);
+        } else {
+            leftTurnRPS(finalHeading, power);
+        }
+    }
+}
+
 void RPSMoveTo(float x, float y, float power) {
     float curX = RPS.X();
     float curY = RPS.Y();
     float theta = atan2f(y - curY, x - curX);
-    rightTurnRPS(theta, power);
+    turnRPS(theta, power);
     leftMotor.SetPercent(power);
     rightMotor.SetPercent(power);
     while(abs(x - RPS.X()) > 1 && abs(y - RPS.Y()) > 1);
@@ -354,24 +405,21 @@ void waitForLight() {
     while(cdsCell.Value() > 1 + CDS_RED);
 }
 
-void displayColor();
 void displayColor() {
-    if(cdsCell.Value() < 1 + CDS_RED) {
-        LCD.SetBackgroundColor(SCARLET);
-        LCD.SetBackgroundColor(MAROON);
-        LCD.SetBackgroundColor(DARKRED);
-        LCD.SetBackgroundColor(SIENNA);
-        LCD.SetBackgroundColor(FIREBRICK);
-        LCD.SetBackgroundColor(MEDIUMVIOLETRED);
-        LCD.SetBackgroundColor(INDIANRED);
-        LCD.SetBackgroundColor(CRIMSON);
-        LCD.SetBackgroundColor(DARKSALMON);
-        LCD.SetBackgroundColor(ORANGERED);
-        LCD.SetBackgroundColor(TOMATO);
-        LCD.SetBackgroundColor(CORAL);
+    if(cdsCell.Value() < .4 + CDS_RED) {
         LCD.SetBackgroundColor(RED);
         LCD.SetFontColor(BLUE);
         LCD.WriteLine("ITS RED! REEEEEDDDDDDDDD!!!!");
+    } else {
+        if(cdsCell.Value() < .5 + CDS_BLUE) {
+           LCD.SetBackgroundColor(BLUE);
+           LCD.SetFontColor(RED);
+           LCD.WriteLine("It's blue.");
+        } else {
+           LCD.SetBackgroundColor(BLACK);
+           LCD.SetFontColor(WHITE);
+           LCD.WriteLine("No Color");
+        }
     }
 }
 

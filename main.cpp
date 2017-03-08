@@ -10,23 +10,23 @@
 #include <math.h>
 
 //Our own classes.
-//#include "mainmenu.h"
 #include <robotdefinitions.h>
 
-AnalogInputPin rightOpto(FEHIO::P1_1);
-AnalogInputPin centerOpto(FEHIO::P1_2);
-AnalogInputPin leftOpto(FEHIO::P1_3);
+AnalogInputPin rightOpto(FEHIO::P2_0);
+AnalogInputPin centerOpto(FEHIO::P2_1);
+AnalogInputPin leftOpto(FEHIO::P2_2);
 
 FEHMotor leftMotor(FEHMotor::Motor0, 12.0);
 FEHMotor rightMotor(FEHMotor::Motor1, 12.0);
+FEHMotor rollServo(FEHMotor::Motor2, 5.5);
 
 DigitalEncoder leftEncoder(FEHIO::P3_7);
 DigitalEncoder rightEncoder(FEHIO::P0_0);
 
 AnalogInputPin cdsCell(FEHIO::P0_1);
 
+//On the left. White wire in front.
 FEHServo yawServo(FEHServo::Servo0);
-FEHServo rollServo(FEHServo::Servo1);
 
 int main(void)
 {
@@ -35,6 +35,9 @@ int main(void)
     //Go to the main menu after startup.
     yawServo.SetMin(SERVO_MIN);
     yawServo.SetMax(SERVO_MAX);
+    rollServo.SetPercent(100);
+    Sleep(5.0);
+    rollServo.SetPercent(0);
     displayMenu();
     return 0;
 }
@@ -78,30 +81,32 @@ void displayMenu() {
             } else if(buttons[3].Pressed(x,y,0)) {
                 test_2();
             } else if(buttons[4].Pressed(x,y,0)) {
-                follow_straight_line();
+                Sleep(1);
+                LCD.SetBackgroundColor(WHITE);
+                LCD.SetFontColor(BLACK);
+                float i = 0;
+                while(!LCD.Touch(&x,&y)) {
+                    LCD.WriteAt("Left:", 0, 20);
+                    LCD.WriteAt("Center:", 0, 60);
+                    LCD.WriteAt("Right:", 0, 100);
+                    LCD.WriteAt(leftOpto.Value(), 100, 20);
+                    LCD.WriteAt(centerOpto.Value(), 100, 60);
+                    LCD.WriteAt(rightOpto.Value(), 100, 100);
+                    LCD.WriteAt(TimeNow(), 20, 140);
+                }
             } else if(buttons[5].Pressed(x,y,0)) {
-                LCD.WriteLine("Forward");
-                encoderForward(30, 10*COUNTS_PER_INCH);
-                LCD.WriteLine("Left Turn");
-                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-                LCD.WriteLine("Forward");
-                encoderForward(30, 10*COUNTS_PER_INCH);
-                LCD.WriteLine("Right Turn");
-                encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
-                LCD.WriteLine("Forward");
-                encoderForward(30, 10*COUNTS_PER_INCH);
-                LCD.WriteLine("Right Turn");
-                encoderRightTurn(30, COUNTS_PER_90_DEGREES);
-                LCD.WriteLine("Forward");
-                encoderForward(30, 10*COUNTS_PER_INCH);
-                LCD.WriteLine("Right Turn");
-                encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
-                LCD.WriteLine("Stop");
-                leftMotor.Stop();
-                rightMotor.Stop();
-                Sleep(2.);
-                LCD.WriteLine("Beverly Hills Cop");
-                play_music();
+                encoderForward(20, 4*COUNTS_PER_INCH);
+                turnRPS(0, 10);
+                Sleep(0.5);
+                turnRPS(45, 10);
+                Sleep(0.5);
+                turnRPS(90, 10);
+                Sleep(0.5);
+                turnRPS(180, 10);
+                Sleep(0.5);
+                turnRPS(270, 10);
+                Sleep(0.5);
+                RPSMoveTo(18.00, 30.00, 15);
             }
 
     }
@@ -110,20 +115,53 @@ void displayMenu() {
 
 void run_final() {
     waitForLight();
-    moveStartToLever();
+    moveStartToCore();
+}
+
+void motor_test() {
+    LCD.WriteLine("Forward");
+    encoderForward(30, 10*COUNTS_PER_INCH);
+    LCD.WriteLine("Left Turn");
+    encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
+    LCD.WriteLine("Forward");
+    encoderForward(30, 10*COUNTS_PER_INCH);
+    LCD.WriteLine("Right Turn");
+    encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
+    LCD.WriteLine("Forward");
+    encoderForward(30, 10*COUNTS_PER_INCH);
+    LCD.WriteLine("Right Turn");
+    encoderRightTurn(30, COUNTS_PER_90_DEGREES);
+    LCD.WriteLine("Forward");
+    encoderForward(30, 10*COUNTS_PER_INCH);
+    LCD.WriteLine("Right Turn");
+    encoderRightTurn(30, 2*COUNTS_PER_90_DEGREES);
+    LCD.WriteLine("Stop");
+    leftMotor.Stop();
+    rightMotor.Stop();
+    Sleep(2.);
+    LCD.WriteLine("Beverly Hills Cop");
+    play_music();
 }
 
 void test_1() {
-    yawServo.TouchCalibrate();
+    yawServo.SetDegree(LEVER_ANGLE);
+    Sleep(.5);
+    yawServo.SetDegree(0.);
+    Sleep(.5);
+    yawServo.SetDegree(LEVER_ANGLE);
+    Sleep(.5);
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    Sleep(.5);
+    yawServo.SetDegree(90.);
+    LCD.WriteLine("WUZZUP");
 }
 
 void test_2() {
     Sleep(0.5);
-    float x, y;
-    while(!LCD.Touch(&x, &y)) {
-        LCD.WriteLine(cdsCell.Value());
-    }
-    moveStartToLever();
+    LCD.WriteLine(atan2(0,1));
+    LCD.WriteLine(atan2(1.414,1.414));
+    LCD.WriteLine(atan2(-1.414,-1.414));
+    LCD.WriteLine(atan2(1,0));
 }
 
 void moveStartToButton() {
@@ -179,6 +217,68 @@ void moveStartToLever() {
     encoderForward(20, 3*COUNTS_PER_INCH);
 }
 
+void moveStartToCore() {
+    //Around wall
+    encoderForward(20, 6*COUNTS_PER_INCH);
+    displayColor();
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, 2*COUNTS_PER_INCH);
+    displayColor();
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    displayColor();
+    int color = getColorCDS();
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    displayColor();
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    yawServo.SetDegree(0);
+    encoderForward(20, (int)(3.5*COUNTS_PER_INCH));
+    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+    //Up ramp
+    encoderForward(32, 30, 4*COUNTS_PER_INCH);
+    encoderForward(46, 40, 4*COUNTS_PER_INCH);
+    encoderForward(50, 48, 4*COUNTS_PER_INCH);
+    encoderForward(40, 6*COUNTS_PER_INCH);
+    encoderForward(30, 1*COUNTS_PER_INCH);
+    encoderLeftTurn(20, 2*COUNTS_PER_90_DEGREES);
+    //Run into core and pick it up
+    encoderForwardWall(-30, -20, 10*COUNTS_PER_INCH, 2.8);
+    Sleep(0.5);
+    encoderForward(20, 4*COUNTS_PER_INCH);
+    follow_straight_line(-20);
+    yawServo.SetDegree(LEVER_ANGLE);
+    Sleep(0.5);
+    encoderForward(20, 8*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES/2);
+    Sleep(0.5);
+    //Line up against wall, turn, and hit satellite dish
+    encoderForwardWall(20, 20, 4*COUNTS_PER_INCH, 2.5);
+    encoderForward(-20,1*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(20, 20, 14*COUNTS_PER_INCH, 3.5);
+    encoderForward(-20, 2*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(-20, -20, 2*COUNTS_PER_INCH, 1.5);
+    switch(color) {
+        //NONE, measure again
+        case 0:
+
+        break;
+        //RED
+        case 1:
+            encoderForward(20, 8*COUNTS_PER_INCH);
+            encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+            follow_black_line(20);
+        break;
+        //BLUE
+        case 2:
+            encoderForward(20, 10*COUNTS_PER_INCH);
+            encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+            follow_black_line(20);
+        break;
+    }
+}
+
 void measure_optosensors() {
     while(true) {
         LCD.WriteAt("Right opto:  ", 10, 10);
@@ -199,19 +299,26 @@ void measure_optosensors1() {
     LCD.WriteAt(leftOpto.Value(), 140, 50);
 }
 
-void follow_straight_line() {
-    rightMotor.SetPercent(BASE_MOTOR_POWER);
-    leftMotor.SetPercent(BASE_MOTOR_POWER);
+void follow_straight_line(int power) {
+    rightMotor.SetPercent(power);
+    leftMotor.SetPercent(power);
+    while(leftOpto.Value() > LEFT_OPTO_ORANGE_BG - .5) {
+     LCD.WriteLine(centerOpto.Value());
+    }
     int state = ON_LINE_FIRST;
+    double startTime = TimeNow();
     while(true) {
-        if(leftOpto.Value() > LEFT_BG - .5)
+        if(TimeNow() - startTime > 3.0) {
+            break;
+        }
+        if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG + 1.0)
             state = LINE_ON_RIGHT;
-        if(rightOpto.Value() > RIGHT_BG -.5)
+        if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG + 1.0)
             state = LINE_ON_LEFT;
-        if(centerOpto.Value() > CENTER_BG - .5) {
-            if(leftOpto.Value() > LEFT_BG - .5)
+        if(centerOpto.Value() < CENTER_OPTO_ORANGE_BG + 1.0) {
+            if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG + 1.0)
                 state = LINE_ON_RIGHT;
-            if(rightOpto.Value() > RIGHT_BG -.5)
+            if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG + 1.0)
                 state = LINE_ON_LEFT;
         } else {
             if(state == LINE_ON_RIGHT) {
@@ -222,20 +329,69 @@ void follow_straight_line() {
         }
         switch(state) {
         case LINE_ON_LEFT:
-            rightMotor.SetPercent(BASE_MOTOR_POWER + 8);
-            leftMotor.SetPercent(BASE_MOTOR_POWER);
+            rightMotor.SetPercent(power + 8);
+            leftMotor.SetPercent(power);
         break;
         case LINE_ON_RIGHT:
-            rightMotor.SetPercent(BASE_MOTOR_POWER);
-            leftMotor.SetPercent(BASE_MOTOR_POWER + 8);
+            rightMotor.SetPercent(power);
+            leftMotor.SetPercent(power + 8);
         break;
         case ON_LINE_FIRST:
-            rightMotor.SetPercent(BASE_MOTOR_POWER);
-            leftMotor.SetPercent(BASE_MOTOR_POWER + 2);
+            rightMotor.SetPercent(power);
+            leftMotor.SetPercent(power + 2);
         break;
         case ON_LINE_SECOND:
-            rightMotor.SetPercent(BASE_MOTOR_POWER + 2);
-            leftMotor.SetPercent(BASE_MOTOR_POWER);
+            rightMotor.SetPercent(power + 2);
+            leftMotor.SetPercent(power);
+        break;
+        }
+    }
+}
+
+void follow_black_line(int power) {
+    rightMotor.SetPercent(power);
+    leftMotor.SetPercent(power);
+    while(rightOpto.Value() > LEFT_OPTO_BLACK_BG + .5) {
+     LCD.WriteLine(centerOpto.Value());
+    }
+    int state = ON_LINE_FIRST;
+    double startTime = TimeNow();
+    while(true) {
+        if(TimeNow() - startTime > 3.0) {
+            break;
+        }
+        if(leftOpto.Value() < LEFT_OPTO_BLACK_BG - 0.7)
+            state = LINE_ON_RIGHT;
+        if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG - 0.7)
+            state = LINE_ON_LEFT;
+        if(centerOpto.Value() < CENTER_OPTO_BLACK_BG - 0.7) {
+            if(leftOpto.Value() < LEFT_OPTO_BLACK_BG - 0.7)
+                state = LINE_ON_RIGHT;
+            if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG - 0.7)
+                state = LINE_ON_LEFT;
+        } else {
+            if(state == LINE_ON_RIGHT) {
+                state = ON_LINE_SECOND;
+            } else if(state == LINE_ON_LEFT) {
+                state = ON_LINE_FIRST;
+            }
+        }
+        switch(state) {
+        case LINE_ON_LEFT:
+            rightMotor.SetPercent(power + 8);
+            leftMotor.SetPercent(power);
+        break;
+        case LINE_ON_RIGHT:
+            rightMotor.SetPercent(power);
+            leftMotor.SetPercent(power + 8);
+        break;
+        case ON_LINE_FIRST:
+            rightMotor.SetPercent(power);
+            leftMotor.SetPercent(power + 2);
+        break;
+        case ON_LINE_SECOND:
+            rightMotor.SetPercent(power + 2);
+            leftMotor.SetPercent(power);
         break;
         }
     }
@@ -286,7 +442,7 @@ void encoderForward(int percent, int counts) {
     rightMotor.SetPercent(percent);
     leftMotor.SetPercent(percent);
     float startTime = TimeNow();
-    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
     }
 
     rightMotor.Stop();
@@ -301,7 +457,7 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
     leftMotor.SetPercent(leftPercent);
     float startTime = TimeNow();
     //Moves on, just in case.
-    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+    while((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
     }
 
     rightMotor.Stop();
@@ -309,7 +465,7 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
 }
 
 //This one is only used for the times when it hits a wall and stops, to make sure it can back up.
-void encoderForwardWall(int leftPercent, int rightPercent, int counts, int backTime) {
+void encoderForwardWall(int leftPercent, int rightPercent, int counts, double backTime) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
     rightMotor.SetPercent(rightPercent);
@@ -356,49 +512,64 @@ void encoderRightTurn(int motorPower, int counts) {
 }
 
 //CCW Turn
-void leftTurnRPS(float finalheading, float power) {
-    while(RPS.Heading() < finalheading) {
-        leftMotor.SetPercent(-power);
-        rightMotor.SetPercent(power);
-    }
-    leftMotor.SetPercent(0);
+void leftTurnRPS(float finalHeading, float power) {
+    float startHeading = RPS.Heading();
+    leftMotor.SetPercent(-power);
+    rightMotor.SetPercent(power);
+    while(RPS.Heading() < finalHeading || RPS.Heading() > startHeading - 2.);
     rightMotor.SetPercent(0);
+    leftMotor.SetPercent(0);
 }
 
 //Clockwise turn
-void rightTurnRPS(float finalheading, float power) {
-    while(RPS.Heading() < finalheading) {
-        rightMotor.SetPercent(-power);
-        leftMotor.SetPercent(power);
-    }
+void rightTurnRPS(float finalHeading, float power) {
+    float startHeading = RPS.Heading();
+    leftMotor.SetPercent(power);
+    rightMotor.SetPercent(-power);
+    while(RPS.Heading() < finalHeading || RPS.Heading() < startHeading + 2.);
     rightMotor.SetPercent(0);
     leftMotor.SetPercent(0);
 }
 
 void turnRPS(float finalHeading, float power) {
-    if(RPS.Heading() > 180.0) {
-        if(finalHeading < (RPS.Heading() - 180.0) || finalHeading < RPS.Heading()) {
-            leftTurnRPS(finalHeading, power);
-        } else {
+    LCD.WriteRC(RPS.Heading(), 1, 1);
+    LCD.WriteRC(finalHeading, 2, 1);
+    bool over180 = false;
+    float divAngle = 180. + RPS.Heading();
+    if(divAngle > 359.9) {
+        divAngle -= 360.;
+        over180 = true;
+    }
+    if(over180) {
+        if(finalHeading < RPS.Heading() && finalHeading > divAngle) {
             rightTurnRPS(finalHeading, power);
+        } else {
+            leftTurnRPS(finalHeading, power);
         }
     } else {
-        if(finalHeading > (RPS.Heading() + 180.0) || finalHeading < RPS.Heading()) {
-            rightTurnRPS(finalHeading, power);
-        } else {
+        if(finalHeading > RPS.Heading() && finalHeading < divAngle) {
             leftTurnRPS(finalHeading, power);
+        } else {
+            rightTurnRPS(finalHeading, power);
         }
     }
+}
+
+void checkRPSHeading(float heading) {
+    turnRPS(heading, 5);
 }
 
 void RPSMoveTo(float x, float y, float power) {
     float curX = RPS.X();
     float curY = RPS.Y();
-    float theta = atan2f(y - curY, x - curX);
+    float theta = (180./3.14159)*atan2((double)(y - curY), (double)(x - curX));
     turnRPS(theta, power);
     leftMotor.SetPercent(power);
     rightMotor.SetPercent(power);
     while(abs(x - RPS.X()) > 1 && abs(y - RPS.Y()) > 1);
+    leftMotor.SetPercent(0);
+    rightMotor.SetPercent(0);
+    LCD.WriteRC(sqrt((x-RPS.X())*(x-RPS.X()) + (y-RPS.Y())*(y-RPS.Y())), 10, 4);
 }
 
 void waitForLight() {
@@ -420,6 +591,17 @@ void displayColor() {
            LCD.SetFontColor(WHITE);
            LCD.WriteLine("No Color");
         }
+    }
+}
+
+//1 for red, 2 for blue. 0 For none.
+int getColorCDS() {
+    if(cdsCell.Value() < .4 + CDS_RED) {
+        return 1;
+    } else if(cdsCell.Value() < .5 + CDS_BLUE) {
+       return 2;
+    } else {
+       return 0;
     }
 }
 

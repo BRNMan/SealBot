@@ -64,7 +64,8 @@ enum LineStates {
 #define SERVO_MAX 2355
 #define SERVO_MIN 500
 #define PARALLEL_ANGLE 60.
-#define LEVER_ANGLE 35.
+#define LEVER_ANGLE 45.
+#define TURN_ANGLE 87.
 
 void post();
 void displayMenu();
@@ -95,6 +96,8 @@ void leftTurnRPS(float finalheading, float power);
 void rightTurnRPS(float finalheading, float power);
 void turnRPS(float finalHeading, float power);
 void RPSMoveTo(float x, float y, float power);
+void RPSPointTowards(float x, float y, int power);
+void RPSPointAway(float x, float y, int power);
 void checkRPSHeading(float heading);
 
 void waitForLight();

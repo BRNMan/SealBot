@@ -7,6 +7,7 @@
 #include <FEHRPS.h>
 #include <FEHBattery.h>
 #include <FEHServo.h>
+#include <FEHSD.h>
 #include <math.h>
 
 //Our own classes.
@@ -35,9 +36,8 @@ int main(void)
     //Go to the main menu after startup.
     yawServo.SetMin(SERVO_MIN);
     yawServo.SetMax(SERVO_MAX);
-    rollServo.SetPercent(100);
-    Sleep(5.0);
-    rollServo.SetPercent(0);
+    //Sleep(5.0);
+    //rollServo.SetPercent(0);
     displayMenu();
     return 0;
 }
@@ -46,15 +46,14 @@ int main(void)
 void post() {
     LCD.Clear(BLACK);
     LCD.SetFontColor(WHITE);
-    encoderForward(10, 10);
+    encoderForward(10, 3*COUNTS_PER_INCH);
     LCD.WriteLine("Left Counts: ");
     LCD.Write(leftEncoder.Counts());
     LCD.WriteLine("Right Counts: ");
     LCD.Write(leftEncoder.Counts());
     LCD.WriteLine("Battery Voltage: ");
     LCD.Write(Battery.Voltage());
-    encoderForward(-10, 10);
-    Sleep(2.);
+    Sleep(2.0);
 }
 
 void displayMenu() {
@@ -64,7 +63,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "CalRPS", "CalServ", "TestRun", "LineStr", "CheckWheels"};
+    char labels[NUM_MENU_BUTTONS][20] = {"Run", "CalRPS", "CalServ", "PrintRPS", "LineStr", "CheckRPS"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -96,17 +95,9 @@ void displayMenu() {
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
                 encoderForward(20, 4*COUNTS_PER_INCH);
-                turnRPS(0, 10);
+                turnRPS(0, 20);
                 Sleep(0.5);
-                turnRPS(45, 10);
-                Sleep(0.5);
-                turnRPS(90, 10);
-                Sleep(0.5);
-                turnRPS(180, 10);
-                Sleep(0.5);
-                turnRPS(270, 10);
-                Sleep(0.5);
-                RPSMoveTo(18.00, 30.00, 15);
+                RPSMoveTo(30.00, 12.00, 15);
             }
 
     }
@@ -158,10 +149,13 @@ void test_1() {
 
 void test_2() {
     Sleep(0.5);
-    LCD.WriteLine(atan2(0,1));
-    LCD.WriteLine(atan2(1.414,1.414));
-    LCD.WriteLine(atan2(-1.414,-1.414));
-    LCD.WriteLine(atan2(1,0));
+    float x = 0, y = 0;
+   while(!LCD.Touch(&x, &y)) {
+       LCD.WriteRC("RPS X:", 1, 1);
+       LCD.WriteRC(RPS.X(), 1, 8);
+       LCD.WriteRC("RPS Y:", 2, 1);
+       LCD.WriteRC(RPS.Y(), 2, 8);
+   }
 }
 
 void moveStartToButton() {
@@ -220,19 +214,17 @@ void moveStartToLever() {
 void moveStartToCore() {
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
-    displayColor();
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, 2*COUNTS_PER_INCH);
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     displayColor();
-    encoderForward(20, 1*COUNTS_PER_INCH);
+    encoderForward(20, (int)(1*COUNTS_PER_INCH));
     displayColor();
     int color = getColorCDS();
-    encoderForward(20, 1*COUNTS_PER_INCH);
+    encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
     displayColor();
-    yawServo.SetDegree(PARALLEL_ANGLE);
-    yawServo.SetDegree(0);
-    encoderForward(20, (int)(3.5*COUNTS_PER_INCH));
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    encoderForward(20, (int)(3.4*COUNTS_PER_INCH));
     encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
     //Up ramp
     encoderForward(32, 30, 4*COUNTS_PER_INCH);
@@ -240,25 +232,30 @@ void moveStartToCore() {
     encoderForward(50, 48, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
     encoderForward(30, 1*COUNTS_PER_INCH);
-    encoderLeftTurn(20, 2*COUNTS_PER_90_DEGREES);
     //Run into core and pick it up
-    encoderForwardWall(-30, -20, 10*COUNTS_PER_INCH, 2.8);
+    //RPSMoveTo(22, 50, 35);
+    //RPSPointTowards(8.9, 63.7, 35);
+    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+    encoderForward(-20, 4*COUNTS_PER_INCH);
+    encoderLeftTurn(20, 3*COUNTS_PER_90_DEGREES/2 + 5);
+    encoderForwardWall(-30,-30,15*COUNTS_PER_INCH, 4.5);
+    encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
     Sleep(0.5);
-    encoderForward(20, 4*COUNTS_PER_INCH);
-    follow_straight_line(-20);
     yawServo.SetDegree(LEVER_ANGLE);
-    Sleep(0.5);
-    encoderForward(20, 8*COUNTS_PER_INCH);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES/2);
-    Sleep(0.5);
-    //Line up against wall, turn, and hit satellite dish
-    encoderForwardWall(20, 20, 4*COUNTS_PER_INCH, 2.5);
-    encoderForward(-20,1*COUNTS_PER_INCH);
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(20, 20, 14*COUNTS_PER_INCH, 3.5);
+    Sleep(0.3);
+    encoderForward(30, 9*COUNTS_PER_INCH);
+    //yawServo.SetDegree(0);
+    //follow_straight_line(-20);
+    //Sleep(0.5);
+    //yawServo.SetDegree(LEVER_ANGLE);
+    //encoderForward(20, 8*COUNTS_PER_INCH);
+    //encoderLeftTurn(20, COUNTS_PER_90_DEGREES/2);
+    //Sleep(0.5);
+    //Line up against wall, turn towards ramp
+    //Down ramp
+    RPSMoveTo(30, 16, 30);
     encoderForward(-20, 2*COUNTS_PER_INCH);
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(-20, -20, 2*COUNTS_PER_INCH, 1.5);
+    encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
     switch(color) {
         //NONE, measure again
         case 0:
@@ -266,17 +263,32 @@ void moveStartToCore() {
         break;
         //RED
         case 1:
-            encoderForward(20, 8*COUNTS_PER_INCH);
+            yawServo.SetDegree(TURN_ANGLE);
+            encoderForward(-20, 8*COUNTS_PER_INCH);
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-            follow_black_line(20);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
+            rollServo.SetPercent(-50.0);
         break;
         //BLUE
         case 2:
-            encoderForward(20, 10*COUNTS_PER_INCH);
-            encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-            follow_black_line(20);
+            yawServo.SetDegree(TURN_ANGLE);
+            encoderForward(-20, 4*COUNTS_PER_INCH);
+            encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
+            rollServo.SetPercent(-50.0);
         break;
     }
+    Sleep(4.0);
+    rollServo.SetPercent(0);
+    yawServo.SetDegree(0);
+    Sleep(0.5);
+    encoderForward(20, 4*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES + 15);
+    encoderForwardWall(30, 30, 34*COUNTS_PER_INCH, 4.0);
+    encoderForward(-20, 2*COUNTS_PER_INCH);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(20, 20, 6*COUNTS_PER_INCH, 2.0);
+    LCD.WriteLine("WERE DONE BIYATTCH");
 }
 
 void measure_optosensors() {
@@ -290,21 +302,9 @@ void measure_optosensors() {
     }
 }
 
-void measure_optosensors1() {
-    LCD.WriteAt("Right opto:  ", 10, 10);
-    LCD.WriteAt(rightOpto.Value(), 140, 10);
-    LCD.WriteAt("Center opto: ", 10, 30);
-    LCD.WriteAt(centerOpto.Value(), 140, 30);
-    LCD.WriteAt("Left opto:   ", 10, 50);
-    LCD.WriteAt(leftOpto.Value(), 140, 50);
-}
-
 void follow_straight_line(int power) {
     rightMotor.SetPercent(power);
     leftMotor.SetPercent(power);
-    while(leftOpto.Value() > LEFT_OPTO_ORANGE_BG - .5) {
-     LCD.WriteLine(centerOpto.Value());
-    }
     int state = ON_LINE_FIRST;
     double startTime = TimeNow();
     while(true) {
@@ -329,19 +329,19 @@ void follow_straight_line(int power) {
         }
         switch(state) {
         case LINE_ON_LEFT:
-            rightMotor.SetPercent(power + 8);
+            rightMotor.SetPercent(power - 6);
             leftMotor.SetPercent(power);
         break;
         case LINE_ON_RIGHT:
             rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power + 8);
+            leftMotor.SetPercent(power - 6);
         break;
         case ON_LINE_FIRST:
             rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power + 2);
+            leftMotor.SetPercent(power - 2);
         break;
         case ON_LINE_SECOND:
-            rightMotor.SetPercent(power + 2);
+            rightMotor.SetPercent(power - 2);
             leftMotor.SetPercent(power);
         break;
         }
@@ -514,9 +514,16 @@ void encoderRightTurn(int motorPower, int counts) {
 //CCW Turn
 void leftTurnRPS(float finalHeading, float power) {
     float startHeading = RPS.Heading();
+    if(finalHeading < 1.0) {
+        finalHeading = 1.0;
+    }
     leftMotor.SetPercent(-power);
     rightMotor.SetPercent(power);
-    while(RPS.Heading() < finalHeading || RPS.Heading() > startHeading - 2.);
+    if(finalHeading < startHeading) {
+        while(RPS.Heading() < finalHeading || RPS.Heading() > startHeading - 2.);
+    } else {
+        while(RPS.Heading() < finalHeading);
+    }
     rightMotor.SetPercent(0);
     leftMotor.SetPercent(0);
 }
@@ -524,16 +531,23 @@ void leftTurnRPS(float finalHeading, float power) {
 //Clockwise turn
 void rightTurnRPS(float finalHeading, float power) {
     float startHeading = RPS.Heading();
+    if(finalHeading < 1.0) {
+        finalHeading = 359.9;
+    }
     leftMotor.SetPercent(power);
     rightMotor.SetPercent(-power);
-    while(RPS.Heading() < finalHeading || RPS.Heading() < startHeading + 2.);
+    if(finalHeading > startHeading) {
+        while(RPS.Heading() > finalHeading || RPS.Heading() < startHeading + 2.);
+    } else {
+        while(RPS.Heading() > finalHeading);
+    }
     rightMotor.SetPercent(0);
     leftMotor.SetPercent(0);
 }
 
 void turnRPS(float finalHeading, float power) {
-    LCD.WriteRC(RPS.Heading(), 1, 1);
-    LCD.WriteRC(finalHeading, 2, 1);
+    LCD.WriteRC(RPS.Heading(), 1, 1); //225
+    LCD.WriteRC(finalHeading, 2, 1);  //90
     bool over180 = false;
     float divAngle = 180. + RPS.Heading();
     if(divAngle > 359.9) {
@@ -560,16 +574,40 @@ void checkRPSHeading(float heading) {
 }
 
 void RPSMoveTo(float x, float y, float power) {
-    float curX = RPS.X();
-    float curY = RPS.Y();
-    float theta = (180./3.14159)*atan2((double)(y - curY), (double)(x - curX));
-    turnRPS(theta, power);
+    RPSPointTowards(x, y, 20);
     leftMotor.SetPercent(power);
     rightMotor.SetPercent(power);
     while(abs(x - RPS.X()) > 1 && abs(y - RPS.Y()) > 1);
     leftMotor.SetPercent(0);
     rightMotor.SetPercent(0);
     LCD.WriteRC(sqrt((x-RPS.X())*(x-RPS.X()) + (y-RPS.Y())*(y-RPS.Y())), 10, 4);
+}
+
+void RPSPointTowards(float x, float y, int power) {
+    float curX = RPS.X();
+    float curY = RPS.Y();
+    float theta = (180.0/3.14159)*atan2((double)(y - curY), (double)(x - curX));
+    if(theta < 0) {
+        theta += 360;
+    }
+    turnRPS(theta, power);
+
+}
+
+void RPSPointAway(float x, float y, int power) {
+    float curX = RPS.X();
+    float curY = RPS.Y();
+    float theta = (180.0/3.14159)*atan2((double)(y - curY), (double)(x - curX));
+    if(theta < 0) {
+        theta += 360;
+    }
+    if(theta > 180) {
+        theta -= 180;
+    } else {
+        theta += 180;
+    }
+    turnRPS(theta, power);
+
 }
 
 void waitForLight() {

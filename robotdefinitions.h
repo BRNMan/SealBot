@@ -73,7 +73,6 @@ void run_final();
 void test_1();
 void test_2();
 void motor_test();
-void play_music();
 void measure_optosensors();
 void follow_straight_line(int power);
 void follow_black_line(int power);
@@ -83,6 +82,7 @@ void follow_curve();
 void moveStartToButton();
 void moveStartToLever();
 void moveStartToCore();
+void moveStartToSat();
 
 //General navigation
 void encoderForward(int percent, int counts);
@@ -104,6 +104,8 @@ void waitForLight();
 void displayColor();
 int getColorCDS();
 
+//Goofy
 void showOff();
+void play_music();
 
 #endif // ROBOTDEFINITIONS_H

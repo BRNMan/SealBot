@@ -10,7 +10,7 @@
 #include <FEHSD.h>
 #include <math.h>
 
-//Our own classes.
+//My header file.
 #include <robotdefinitions.h>
 
 AnalogInputPin rightOpto(FEHIO::P2_0);
@@ -85,13 +85,19 @@ void displayMenu() {
                 LCD.SetFontColor(BLACK);
                 float i = 0;
                 while(!LCD.Touch(&x,&y)) {
-                    LCD.WriteAt("Left:", 0, 20);
-                    LCD.WriteAt("Center:", 0, 60);
-                    LCD.WriteAt("Right:", 0, 100);
-                    LCD.WriteAt(leftOpto.Value(), 100, 20);
-                    LCD.WriteAt(centerOpto.Value(), 100, 60);
-                    LCD.WriteAt(rightOpto.Value(), 100, 100);
-                    LCD.WriteAt(TimeNow(), 20, 140);
+                    LCD.WriteRC("Left:", 0, 0);
+                    LCD.WriteRC("Center:", 1, 0);
+                    LCD.WriteRC("Right:", 2, 0);
+                    LCD.WriteRC(leftOpto.Value(), 0, 6);
+                    LCD.WriteRC(centerOpto.Value(), 1, 8);
+                    LCD.WriteRC(rightOpto.Value(), 2, 7);
+                    LCD.WriteRC("RPS X:", 3, 0);
+                    LCD.WriteRC("RPS Y:", 4, 0);
+                    LCD.WriteRC("RPS Heading:", 5, 0);
+                    LCD.WriteRC(RPS.X(), 3, 7);
+                    LCD.WriteRC(RPS.Y(), 4, 7);
+                    LCD.WriteRC(RPS.Heading(), 5, 13);
+                    LCD.WriteRC(TimeNow(), 6, 0);
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
                 encoderForward(20, 4*COUNTS_PER_INCH);
@@ -158,6 +164,7 @@ void test_2() {
    }
 }
 
+//PT1 (Performance Test 1)
 void moveStartToButton() {
     LCD.WriteLine("We have liftoff!");
     //Around wall
@@ -182,6 +189,7 @@ void moveStartToButton() {
     encoderForward(-20, 12*COUNTS_PER_INCH);
 }
 
+//PT2
 void moveStartToLever() {
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
@@ -211,6 +219,7 @@ void moveStartToLever() {
     encoderForward(20, 3*COUNTS_PER_INCH);
 }
 
+//PT3
 void moveStartToCore() {
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
@@ -291,6 +300,39 @@ void moveStartToCore() {
     LCD.WriteLine("WERE DONE BIYATTCH");
 }
 
+//PT4
+void moveStartToSat() {
+    encoderForward(30, 6*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(40, 40, 120*COUNTS_PER_INCH, 5.5);
+    encoderForward(20, 2*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 3.0);
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    Sleep(1.0);
+    leftTurnRPS(90.0, 20);
+    encoderForward(20, 4*COUNTS_PER_INCH);
+    if(RPS.SatellitePercent() < 99) {
+        encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+        encoderForwardWall(30, 30, 8*COUNTS_PER_INCH, 3.0);
+        encoderForward(20, 2*COUNTS_PER_INCH);
+        encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+        encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 3.0);
+        encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+        encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+        Sleep(1.0);
+        leftTurnRPS(90.0, 20);
+        encoderForward(20, 4*COUNTS_PER_INCH);
+    }
+    leftTurnRPS(180, 20);
+    encoderForwardWall(40, 40, 120*COUNTS_PER_INCH, 5.5);
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
+    encoderForwardWall(40, 40, 12*COUNTS_PER_INCH, 1.5);
+}
+
 void measure_optosensors() {
     while(true) {
         LCD.WriteAt("Right opto:  ", 10, 10);
@@ -302,24 +344,27 @@ void measure_optosensors() {
     }
 }
 
+//Orange line following
+//Left optosensor is from robots point of view. This method is optimized to drive backwards into the target.
 void follow_straight_line(int power) {
     rightMotor.SetPercent(power);
     leftMotor.SetPercent(power);
-    int state = ON_LINE_FIRST;
+    int state = NOT_ON_LINE;
+    int turnPower = 8;
     double startTime = TimeNow();
     while(true) {
         if(TimeNow() - startTime > 3.0) {
             break;
         }
-        if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG + 1.0)
-            state = LINE_ON_RIGHT;
-        if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG + 1.0)
+        if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG - 1.0)
             state = LINE_ON_LEFT;
-        if(centerOpto.Value() < CENTER_OPTO_ORANGE_BG + 1.0) {
-            if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG + 1.0)
-                state = LINE_ON_RIGHT;
-            if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG + 1.0)
-                state = LINE_ON_LEFT;
+        if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG - 1.0)
+            state = LINE_ON_RIGHT;
+        if(centerOpto.Value() < CENTER_OPTO_ORANGE_BG - 1.0) {
+            if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG - 1.0)
+                state = ON_LINE_SECOND;
+            if(rightOpto.Value() < RIGHT_OPTO_ORANGE_BG - 1.0)
+                state = ON_LINE_FIRST;
         } else {
             if(state == LINE_ON_RIGHT) {
                 state = ON_LINE_SECOND;
@@ -344,31 +389,34 @@ void follow_straight_line(int power) {
             rightMotor.SetPercent(power - 2);
             leftMotor.SetPercent(power);
         break;
+        default:
+        break;
         }
     }
 }
 
+//Black line following
 void follow_black_line(int power) {
     rightMotor.SetPercent(power);
     leftMotor.SetPercent(power);
-    while(rightOpto.Value() > LEFT_OPTO_BLACK_BG + .5) {
+    while(rightOpto.Value() < LEFT_OPTO_BLACK_BG + .5) {
      LCD.WriteLine(centerOpto.Value());
     }
-    int state = ON_LINE_FIRST;
+    int state = NOT_ON_LINE;
     double startTime = TimeNow();
     while(true) {
         if(TimeNow() - startTime > 3.0) {
             break;
         }
-        if(leftOpto.Value() < LEFT_OPTO_BLACK_BG - 0.7)
-            state = LINE_ON_RIGHT;
-        if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG - 0.7)
+        if(leftOpto.Value() < LEFT_OPTO_BLACK_BG + 0.7)
             state = LINE_ON_LEFT;
-        if(centerOpto.Value() < CENTER_OPTO_BLACK_BG - 0.7) {
-            if(leftOpto.Value() < LEFT_OPTO_BLACK_BG - 0.7)
-                state = LINE_ON_RIGHT;
-            if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG - 0.7)
-                state = LINE_ON_LEFT;
+        if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG + 0.7)
+            state = LINE_ON_RIGHT;
+        if(centerOpto.Value() < CENTER_OPTO_BLACK_BG + 0.7) {
+            if(leftOpto.Value() < LEFT_OPTO_BLACK_BG + 0.7)
+                state = ON_LINE_SECOND;
+            if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG + 0.7)
+                state = ON_LINE_FIRST;
         } else {
             if(state == LINE_ON_RIGHT) {
                 state = ON_LINE_SECOND;
@@ -378,20 +426,22 @@ void follow_black_line(int power) {
         }
         switch(state) {
         case LINE_ON_LEFT:
-            rightMotor.SetPercent(power + 8);
+            rightMotor.SetPercent(power - 6);
             leftMotor.SetPercent(power);
         break;
         case LINE_ON_RIGHT:
             rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power + 8);
+            leftMotor.SetPercent(power - 6);
         break;
         case ON_LINE_FIRST:
             rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power + 2);
+            leftMotor.SetPercent(power - 2);
         break;
         case ON_LINE_SECOND:
-            rightMotor.SetPercent(power + 2);
+            rightMotor.SetPercent(power - 2);
             leftMotor.SetPercent(power);
+        break;
+        default:
         break;
         }
     }
@@ -476,14 +526,6 @@ void encoderForwardWall(int leftPercent, int rightPercent, int counts, double ba
     }
     rightMotor.Stop();
     leftMotor.Stop();
-}
-
-//TODO: Accelerates forward amount specified by counts at maximum power of power.
-void encoderAccelForward(int power, int counts);
-void encoderAccelForward(int power, int counts) {
-    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
-
-    }
 }
 
 void encoderLeftTurn(int motorPower, int counts) {
@@ -600,9 +642,6 @@ void RPSPointAway(float x, float y, int power) {
     float theta = (180.0/3.14159)*atan2((double)(y - curY), (double)(x - curX));
     if(theta < 0) {
         theta += 360;
-    }
-    if(theta > 180) {
-        theta -= 180;
     } else {
         theta += 180;
     }

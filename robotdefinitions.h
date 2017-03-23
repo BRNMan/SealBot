@@ -35,8 +35,8 @@ enum LineStates {
 };
 
 //IGWAN encoder counts
-#define COUNTS_PER_INCH 28
-#define COUNTS_PER_90_DEGREES 113
+#define COUNTS_PER_INCH 56
+#define COUNTS_PER_90_DEGREES 205
 //Left wheel turns more, so subtract this value from the counts for a right turn
 #define RTURN_OFFSET 30
 
@@ -65,7 +65,8 @@ enum LineStates {
 #define SERVO_MIN 500
 #define PARALLEL_ANGLE 60.
 #define LEVER_ANGLE 45.
-#define TURN_ANGLE 87.
+#define TURN_ANGLE 95.
+#define SAT_ANGLE 62
 
 void post();
 void displayMenu();

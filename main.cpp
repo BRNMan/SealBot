@@ -21,7 +21,7 @@ FEHMotor leftMotor(FEHMotor::Motor0, 12.0);
 FEHMotor rightMotor(FEHMotor::Motor1, 12.0);
 FEHMotor rollServo(FEHMotor::Motor2, 5.5);
 
-DigitalEncoder leftEncoder(FEHIO::P3_7);
+DigitalEncoder leftEncoder(FEHIO::P0_2);
 DigitalEncoder rightEncoder(FEHIO::P0_0);
 
 AnalogInputPin cdsCell(FEHIO::P0_1);
@@ -63,7 +63,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"Run", "CalRPS", "CalServ", "PrintRPS", "LineStr", "CheckRPS"};
+    char labels[NUM_MENU_BUTTONS][20] = {"RunCore", "CalRPS", "CalServ", "GoToSat", "CheckVitals", "CheckRPS"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -101,9 +101,8 @@ void displayMenu() {
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
                 encoderForward(20, 4*COUNTS_PER_INCH);
-                turnRPS(0, 20);
-                Sleep(0.5);
-                RPSMoveTo(30.00, 12.00, 15);
+                encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+                encoderForward(20, 12*COUNTS_PER_INCH);
             }
 
     }
@@ -112,7 +111,44 @@ void displayMenu() {
 
 void run_final() {
     waitForLight();
-    moveStartToCore();
+    //Around wall
+    encoderForward(20, 6*COUNTS_PER_INCH);
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    displayColor();
+    encoderForward(20, (int)(1*COUNTS_PER_INCH));
+    displayColor();
+    int color = getColorCDS();
+    encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
+    displayColor();
+    encoderForward(20, 1*COUNTS_PER_INCH);
+    encoderForward(20, (int)(3.4*COUNTS_PER_INCH));
+    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+
+    //Up ramp
+    encoderForward(32, 30, 4*COUNTS_PER_INCH);
+    encoderForward(46, 40, 4*COUNTS_PER_INCH);
+    encoderForward(50, 48, 4*COUNTS_PER_INCH);
+    encoderForward(40, 6*COUNTS_PER_INCH);
+    encoderForward(30, 1*COUNTS_PER_INCH);
+
+    //To lever
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    RPSPointAway(10, 45, 15);  //Line up with the lever.
+    Sleep(0.1);
+    encoderForwardWall(-25, -25, 8*COUNTS_PER_INCH, 2.5);
+    yawServo.SetDegree(LEVER_ANGLE);
+    encoderForward(20, 3*COUNTS_PER_INCH);
+    yawServo.SetDegree(PARALLEL_ANGLE);
+    encoderForward(20, 3*COUNTS_PER_INCH);
+
+    //To Button
+
+    //Pull Core
+    RPSMoveTo(22, 50, 25);
+    //moveStartToCore();
 }
 
 void motor_test() {
@@ -154,15 +190,10 @@ void test_1() {
 }
 
 void test_2() {
-    Sleep(0.5);
-    float x = 0, y = 0;
-   while(!LCD.Touch(&x, &y)) {
-       LCD.WriteRC("RPS X:", 1, 1);
-       LCD.WriteRC(RPS.X(), 1, 8);
-       LCD.WriteRC("RPS Y:", 2, 1);
-       LCD.WriteRC(RPS.Y(), 2, 8);
-   }
+    waitForLight();
+    moveStartToSat();
 }
+
 
 //PT1 (Performance Test 1)
 void moveStartToButton() {
@@ -242,14 +273,10 @@ void moveStartToCore() {
     encoderForward(40, 6*COUNTS_PER_INCH);
     encoderForward(30, 1*COUNTS_PER_INCH);
     //Run into core and pick it up
-    //RPSMoveTo(22, 50, 35);
-    //RPSPointTowards(8.9, 63.7, 35);
-    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
-    encoderForward(-20, 4*COUNTS_PER_INCH);
-    encoderLeftTurn(20, 3*COUNTS_PER_90_DEGREES/2 + 5);
-    encoderForwardWall(-30,-30,15*COUNTS_PER_INCH, 4.5);
-    encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
+    RPSMoveTo(22, 50, 25);
+    RPSPointAway(8., 64., 10);
     Sleep(0.5);
+    follow_straight_line(-20);
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(0.3);
     encoderForward(30, 9*COUNTS_PER_INCH);
@@ -259,6 +286,8 @@ void moveStartToCore() {
     //yawServo.SetDegree(LEVER_ANGLE);
     //encoderForward(20, 8*COUNTS_PER_INCH);
     //encoderLeftTurn(20, COUNTS_PER_90_DEGREES/2);
+    Sleep(0.5);
+    encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
     //Sleep(0.5);
     //Line up against wall, turn towards ramp
     //Down ramp
@@ -297,39 +326,43 @@ void moveStartToCore() {
     encoderForward(-20, 2*COUNTS_PER_INCH);
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
     encoderForwardWall(20, 20, 6*COUNTS_PER_INCH, 2.0);
-    LCD.WriteLine("WERE DONE BIYATTCH");
 }
 
 //PT4
 void moveStartToSat() {
-    encoderForward(30, 6*COUNTS_PER_INCH);
+    encoderForwardWall(30, 30, 6*COUNTS_PER_INCH, 3.0);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(40, 40, 120*COUNTS_PER_INCH, 5.5);
-    encoderForward(20, 2*COUNTS_PER_INCH);
+    encoderForwardWall(40, 40, 60*COUNTS_PER_INCH, 5.5);
+    encoderForward(-20, 2*COUNTS_PER_INCH);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    yawServo.SetDegree(PARALLEL_ANGLE);
+    yawServo.SetDegree(SAT_ANGLE);
     encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 3.0);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(-20, 3*COUNTS_PER_INCH);
     Sleep(1.0);
-    leftTurnRPS(90.0, 20);
+    leftTurnRPS(90.0, 15);
     encoderForward(20, 4*COUNTS_PER_INCH);
-    if(RPS.SatellitePercent() < 99) {
+    if(RPS.SatellitePercent() < 0) {
         encoderRightTurn(20, COUNTS_PER_90_DEGREES);
         encoderForwardWall(30, 30, 8*COUNTS_PER_INCH, 3.0);
-        encoderForward(20, 2*COUNTS_PER_INCH);
+        encoderForward(-20, 2*COUNTS_PER_INCH);
         encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
         encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 3.0);
         encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
         encoderRightTurn(20, COUNTS_PER_90_DEGREES);
         Sleep(1.0);
-        leftTurnRPS(90.0, 20);
+        leftTurnRPS(90.0, 15);
         encoderForward(20, 4*COUNTS_PER_INCH);
     }
-    leftTurnRPS(180, 20);
-    encoderForwardWall(40, 40, 120*COUNTS_PER_INCH, 5.5);
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    //Up and down the ramp
+    RPSMoveTo(22, 50, 40);
+    encoderForward(-30, -30, 5*COUNTS_PER_INCH);
+    RPSMoveTo(30, 16, 30);
+    turnRPS(175, 15);
+    encoderForwardWall(30, 30, 60*COUNTS_PER_INCH, 3.5);
     encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
     encoderForwardWall(40, 40, 12*COUNTS_PER_INCH, 1.5);
 }
 
@@ -353,7 +386,7 @@ void follow_straight_line(int power) {
     int turnPower = 8;
     double startTime = TimeNow();
     while(true) {
-        if(TimeNow() - startTime > 3.0) {
+        if(TimeNow() - startTime > 3.5) {
             break;
         }
         if(leftOpto.Value() < LEFT_OPTO_ORANGE_BG - 1.0)
@@ -523,6 +556,10 @@ void encoderForwardWall(int leftPercent, int rightPercent, int counts, double ba
     float startTime = TimeNow();
     //Moves on after specified time
     while((leftEncoder.Counts() + rightEncoder.Counts()) / 2. < counts && TimeNow() - startTime < backTime) {
+        LCD.SetBackgroundColor(WHITE);
+        LCD.SetFontColor(BLACK);
+        LCD.WriteRC(leftEncoder.Counts(), 0, 0);
+        LCD.WriteRC(rightEncoder.Counts(), 1, 0);
     }
     rightMotor.Stop();
     leftMotor.Stop();

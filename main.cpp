@@ -110,22 +110,42 @@ void displayMenu() {
 }
 
 void run_final() {
+    LCD.SetBackgroundColor(WHITE);
+    LCD.SetFontColor(WHITE);
     waitForLight();
     //Around wall
     encoderForward(20, 6*COUNTS_PER_INCH);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
-    displayColor();
     encoderForward(20, (int)(1*COUNTS_PER_INCH));
+    Sleep(0.2);
     displayColor();
     int color = getColorCDS();
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
     displayColor();
-    encoderForward(20, 1*COUNTS_PER_INCH);
-    encoderForward(20, (int)(3.4*COUNTS_PER_INCH));
-    encoderLeftTurn(20, 1*COUNTS_PER_90_DEGREES);
+    encoderForward(30, 1*COUNTS_PER_INCH);
+    encoderForward(40, 8*COUNTS_PER_INCH);
+    //Turn left a little to avoid hitting the dish.
+    encoderForwardWall(43, 40, 60*COUNTS_PER_INCH, 2.5);
+    yawServo.SetDegree(SAT_ANGLE);
+    encoderForward(-20, 2*COUNTS_PER_INCH);
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 2.0);
+    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    encoderForward(-20, 3*COUNTS_PER_INCH);
+    yawServo.SetDegree(0);
+    Sleep(1.0);
+    Sleep(0.2);
+    turnRPS(0, 15);
+    encoderForward(-20, -20, 2*COUNTS_PER_INCH);
+    turnRPS(75, 15);
+    Sleep(0.1);
+    turnRPS(88, 15);
+    Sleep(0.1);
 
+    LCD.WriteRC("Going up ramp.", 13, 0);
     //Up ramp
     encoderForward(32, 30, 4*COUNTS_PER_INCH);
     encoderForward(46, 40, 4*COUNTS_PER_INCH);
@@ -133,10 +153,18 @@ void run_final() {
     encoderForward(40, 6*COUNTS_PER_INCH);
     encoderForward(30, 1*COUNTS_PER_INCH);
 
-    //To lever
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES);
+    LCD.WriteRC("Going to lever.", 13, 0);
+    //Back up into lever
+    leftMotor.SetPercent(-20);
+    rightMotor.SetPercent(-20);
+    while(RPS.Y()> 46);
+    leftMotor.Stop();
+    rightMotor.Stop();
     yawServo.SetDegree(PARALLEL_ANGLE);
-    RPSPointAway(10, 45, 15);  //Line up with the lever.
+    Sleep(0.1);
+    turnRPS(0, 15);
+    Sleep(0.1);
+    turnRPS(0, 15);
     Sleep(0.1);
     encoderForwardWall(-25, -25, 8*COUNTS_PER_INCH, 2.5);
     yawServo.SetDegree(LEVER_ANGLE);
@@ -144,10 +172,62 @@ void run_final() {
     yawServo.SetDegree(PARALLEL_ANGLE);
     encoderForward(20, 3*COUNTS_PER_INCH);
 
+    LCD.WriteRC("Going to Button", 13, 0);
     //To Button
+    RPSMoveTo(30, 50, 25);
+    turnRPS(0, 15);
+    encoderForwardWall(40, 40, 30*COUNTS_PER_INCH, 1.5);
+    encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
+    encoderLeftTurn(25, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 8.0);
+    encoderForward(-20, 4*COUNTS_PER_INCH);
 
+    
+    LCD.WriteRC("Pulling Core.", 13, 0);
     //Pull Core
-    RPSMoveTo(22, 50, 25);
+
+    RPSMoveTo(22, 50, 15);
+    yawServo.SetDegree(TURN_ANGLE);
+    rollServo.SetPercent(50.0);
+    Sleep(1.0);
+    rollServo.Stop();
+    RPSPointAway(8., 64., 15);
+    Sleep(0.5);
+    RPSPointAway(8., 64., 15);
+    Sleep(0.1);
+    yawServo.SetDegree(0);
+    follow_straight_line(-20);
+    encoderForward(30,(int)(1.5*COUNTS_PER_INCH));
+    yawServo.SetDegree(LEVER_ANGLE);
+    Sleep(0.5);
+    encoderForward(30, 10*COUNTS_PER_INCH);
+    RPSMoveTo(30, 16, 30);
+    leftTurnRPS(170, 15);
+
+    switch(color) {
+        //NONE, measure again
+        case 0:
+
+        break;
+        //RED
+        case 1:
+            yawServo.SetDegree(TURN_ANGLE);
+            encoderForward(-20, 8*COUNTS_PER_INCH);
+            encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
+            rollServo.SetPercent(-50.0);
+        break;
+        //BLUE
+        case 2:
+            yawServo.SetDegree(TURN_ANGLE);
+            encoderForward(-20, 4*COUNTS_PER_INCH);
+            encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
+            rollServo.SetPercent(-50.0);
+        break;
+    }
+    Sleep(3.5);
+    rollServo.Stop();
     //moveStartToCore();
 }
 

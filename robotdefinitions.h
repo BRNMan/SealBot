@@ -63,10 +63,10 @@ enum LineStates {
 //Yaw Servo Defines
 #define SERVO_MAX 2355
 #define SERVO_MIN 500
-#define PARALLEL_ANGLE 60.
+#define PARALLEL_ANGLE 100.
 #define LEVER_ANGLE 45.
-#define TURN_ANGLE 95.
-#define SAT_ANGLE 62
+#define TURN_ANGLE 110.
+#define SAT_ANGLE 75.
 
 void post();
 void displayMenu();

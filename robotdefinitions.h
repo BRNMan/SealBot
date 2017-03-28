@@ -36,22 +36,25 @@ enum LineStates {
 
 //IGWAN encoder counts
 #define COUNTS_PER_INCH 56
-#define COUNTS_PER_90_DEGREES 205
+#define COUNTS_PER_90_DEGREES 196
 //Left wheel turns more, so subtract this value from the counts for a right turn
 #define RTURN_OFFSET 30
 
+//RPS Offset, to make sure it doesn't turn too far.
+#define RPS_OFFSET 8
+
 //CDS Cell readings for different lights with no filter.
-#define CDS_RED .3
-#define CDS_BLUE .8
+#define CDS_RED .5
+#define CDS_BLUE 1.8
 #define CDS_NONE 3.0
 
 //Base optosensor readings for each relevant surface.
 #define LEFT_OPTO_ORANGE 1.5
-#define CENTER_OPTO_ORANGE 1.
-#define RIGHT_OPTO_ORANGE 1.3
+#define CENTER_OPTO_ORANGE 0.95
+#define RIGHT_OPTO_ORANGE 1.75
 #define LEFT_OPTO_ORANGE_BG 3.0
 #define CENTER_OPTO_ORANGE_BG 3.0
-#define RIGHT_OPTO_ORANGE_BG 3.0
+#define RIGHT_OPTO_ORANGE_BG 2.5
 
 #define LEFT_OPTO_BLACK 2.3
 #define CENTER_OPTO_BLACK 2.1
@@ -63,10 +66,10 @@ enum LineStates {
 //Yaw Servo Defines
 #define SERVO_MAX 2355
 #define SERVO_MIN 500
-#define PARALLEL_ANGLE 100.
-#define LEVER_ANGLE 45.
-#define TURN_ANGLE 110.
-#define SAT_ANGLE 75.
+#define PARALLEL_ANGLE 95.
+#define LEVER_ANGLE 40.
+#define TURN_ANGLE 100.
+#define SAT_ANGLE 45.
 
 void post();
 void displayMenu();
@@ -106,7 +109,6 @@ void displayColor();
 int getColorCDS();
 
 //Goofy
-void showOff();
 void play_music();
 
 #endif // ROBOTDEFINITIONS_H

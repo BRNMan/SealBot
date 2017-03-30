@@ -154,7 +154,7 @@ void run_final() {
     encoderForward(-20, -20, 2*COUNTS_PER_INCH);
     encoderLeftTurn(35, 78*COUNTS_PER_90_DEGREES/90);
     Sleep(0.1);
-    turnRPS(88, 15);
+    turnRPS(80, 15);
     Sleep(0.1);
 
     LCD.WriteRC("Going up ramp.", 13, 0);
@@ -164,7 +164,7 @@ void run_final() {
     encoderForward(52, 50, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
     encoderForward(30, 1*COUNTS_PER_INCH);*/
-    accelForwardSin(44, 94, 40, 90, 19*COUNTS_PER_INCH);
+    accelForwardSin(44, 94, 40, 90, 18*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to lever.", 13, 0);
     //Back up into lever
@@ -201,25 +201,29 @@ void run_final() {
 
     //Pull Core
     //encoderRightTurn(40, COUNTS_PER_90_DEGREES + 20);
-    accelRightSin(20, 60, COUNTS_PER_90_DEGREES - 12);
+    accelRightSin(20, 45, 80*COUNTS_PER_90_DEGREES/90);
     encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.8);
 
     LCD.WriteRC("Pulling Core.", 13, 0);
     rightMotor.SetPercent(-20);
+    //Turn claw into correct position
     yawServo.SetDegree(TURN_ANGLE);
     rollServo.SetPercent(50.0);
     Sleep(0.1);
     rightMotor.Stop();
     encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
+    //Back up into line
+    encoderForward(-50, 4*COUNTS_PER_INCH);
     rollServo.Stop();
     yawServo.SetDegree(0);
-    encoderForward(-50, 4*COUNTS_PER_INCH);
     leftMotor.SetPercent(-20);
     rightMotor.SetPercent(-20);
+    //Wait for center line to appear under optosensor
     while(centerOpto.Value() > CENTER_OPTO_ORANGE + 0.8);
-    encoderForward(-15, (int)(.9*COUNTS_PER_INCH));
+    encoderForward(-15, (int)(1.6*COUNTS_PER_INCH));
     leftMotor.Stop();
     rightMotor.Stop();
+    Sleep(0.2);
     encoderRightTurn(20, (int)(0.5*COUNTS_PER_90_DEGREES));
     encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 1.2);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
@@ -241,10 +245,8 @@ void run_final() {
     Sleep(0.5);
     encoderForward(30, 4*COUNTS_PER_INCH);
     accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 20);
-    //Move down ramp
-    //RPSPointTo(32, 16, 30);
-    //leftTurnRPS(350, 15);
-    encoderForward(40, 15*COUNTS_PER_INCH);
+    encoderForward(40, 14*COUNTS_PER_INCH);
+    encoderLeftTurn(35, 2*COUNTS_PER_90_DEGREES/3);
     leftTurnRPS(350, 15);
 
 
@@ -257,7 +259,7 @@ void run_final() {
         case 1:
             yawServo.SetDegree(TURN_ANGLE);
             //Move 7 inches towards red bucket.
-            encoderForward(-20, (int)(5.75*COUNTS_PER_INCH));
+            encoderForward(-20, (int)(6.5*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
             encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
             rollServo.SetPercent(-75.0);
@@ -268,15 +270,15 @@ void run_final() {
             encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.5);*/
             leftMotor.SetPercent(50);
             rightMotor.SetPercent(70);
-            Sleep(0.7);
+            Sleep(0.8);
             leftMotor.SetPercent(70);
             rightMotor.SetPercent(50);
-            Sleep(0.6);
+            Sleep(0.7);
         break;
         //BLUE
         case 2:
             yawServo.SetDegree(TURN_ANGLE);
-            //encoderForward(20, 1*COUNTS_PER_INCH);
+            encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
             encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
             rollServo.SetPercent(-75.0);

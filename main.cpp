@@ -29,6 +29,9 @@ AnalogInputPin cdsCell(FEHIO::P0_1);
 //On the left. White wire in front.
 FEHServo yawServo(FEHServo::Servo0);
 
+DigitalInputPin left_switch(FEHIO::P1_1);
+DigitalInputPin right_switch(FEHIO::P1_0);
+
 int main(void)
 {
     //hardware check
@@ -102,15 +105,15 @@ void displayMenu() {
                     LCD.WriteRC(TimeNow(), 8, 0);
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
-                encoderForward(20, 8*COUNTS_PER_INCH);
-                Sleep(0.2);
-                turnRPS(0, 15);
-                LCD.WriteRC("RPS Heading:", 5, 0);
-                LCD.WriteRC(RPS.Heading(), 5, 13);
-                Sleep(0.2);
-                turnRPS(270, 15);
-                LCD.WriteRC("RPS Heading:", 5, 0);
-                LCD.WriteRC(RPS.Heading(), 5, 13);
+                yawServo.SetDegree(LEVER_ANGLE);
+                Sleep(0.5);
+                encoderForward(30, 2*COUNTS_PER_INCH);
+                accelForwardSin(40, 90, 20, 65, 8*COUNTS_PER_INCH);
+                //Move down ramp
+                //RPSPointTo(32, 16, 30);
+                //leftTurnRPS(350, 15);
+                RPSPointTowards(32, 16, 20);
+                accelForwardSin(20, 80, 12*COUNTS_PER_INCH);
             }
 
     }
@@ -126,107 +129,99 @@ void run_final() {
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     Sleep(0.1);
     encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+    encoderForward(20, (int)(1.4*COUNTS_PER_INCH));
     encoderForward(20, (int)(1*COUNTS_PER_INCH));
     Sleep(0.2);
     displayColor();
     int color = getColorCDS();
+    if(color < 1 || color > 2) {
+        color = 1;
+    }
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
-    displayColor();
-    encoderForward(30, 1*COUNTS_PER_INCH);
-    encoderForward(40, 8*COUNTS_PER_INCH);
+    accelForwardSin(40, 90, 8*COUNTS_PER_INCH);
     //Turn left a little to avoid hitting the dish.
-    encoderForwardWall(40, 45, 60*COUNTS_PER_INCH, 2.0);
+    encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
     yawServo.SetDegree(SAT_ANGLE);
     encoderForward(-20, (int)(1.8*COUNTS_PER_INCH));
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 2.0);
+    encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
+    encoderForwardWall(-30, -30, 8*COUNTS_PER_INCH, 1.5);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
-    encoderRightTurn(20, 10*COUNTS_PER_90_DEGREES/9);
+    encoderRightTurn(30, 10*COUNTS_PER_90_DEGREES/9);
     encoderForward(-20, 3*COUNTS_PER_INCH);
     yawServo.SetDegree(0);
-    Sleep(1.0);
-    //Check if the satellite has been pressed. If not, try again with a higher angle.
-    if(RPS.SatellitePercent() < 70) {
-        encoderForwardWall(45, 40, 60*COUNTS_PER_INCH, 2.0);
-        yawServo.SetDegree(SAT_ANGLE + 7);
-        encoderForward(-20, 2*COUNTS_PER_INCH);
-        encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-        encoderForwardWall(-20, -20, 8*COUNTS_PER_INCH, 2.0);
-        encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
-        encoderRightTurn(20, COUNTS_PER_90_DEGREES);
-        encoderForward(-20, 3*COUNTS_PER_INCH);
-        yawServo.SetDegree(0);
-        Sleep(1.0);
-    }
+    Sleep(0.5);
     turnRPS(5, 15);
     encoderForward(-20, -20, 2*COUNTS_PER_INCH);
-    turnRPS(75, 15);
+    encoderLeftTurn(35, 78*COUNTS_PER_90_DEGREES/90);
     Sleep(0.1);
     turnRPS(88, 15);
     Sleep(0.1);
 
     LCD.WriteRC("Going up ramp.", 13, 0);
     //Up ramp
-    encoderForward(42, 40, 4*COUNTS_PER_INCH);
+    /*encoderForward(42, 40, 4*COUNTS_PER_INCH);
     encoderForward(42, 40, 4*COUNTS_PER_INCH);
     encoderForward(52, 50, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
-    encoderForward(30, 1*COUNTS_PER_INCH);
+    encoderForward(30, 1*COUNTS_PER_INCH);*/
+    accelForwardSin(44, 94, 40, 90, 19*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to lever.", 13, 0);
     //Back up into lever
     leftMotor.SetPercent(-15);
     rightMotor.SetPercent(-15);
-    while(RPS.Y()> 46.5);
+    while(RPS.Y()> 48.5);
     leftMotor.Stop();
     rightMotor.Stop();
     yawServo.SetDegree(PARALLEL_ANGLE);
-    Sleep(0.1);
-    turnRPS(5, 15);
-    Sleep(0.1);
-    turnRPS(5, 15);
+    accelRightSin(20, 50, 22*COUNTS_PER_90_DEGREES/18);
+    //encoderRightTurn(25, 21*COUNTS_PER_90_DEGREES/18);
     Sleep(0.1);
     //Corrects left to hit lever
-    encoderLeftTurn(20, 10);
-    encoderForwardWall(-25, -25, 8*COUNTS_PER_INCH, 2.5);
+    encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 1.2);
     rightMotor.SetPercent(30);
     Sleep(0.1);
     rightMotor.Stop();
+    encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 0.5);
+    encoderForwardWall(20, 20, (int)(0.5*COUNTS_PER_INCH), 0.3);
     yawServo.SetDegree(LEVER_ANGLE);
-    encoderForward(20, 3*COUNTS_PER_INCH);
+    encoderForward(30, 3*COUNTS_PER_INCH);
     yawServo.SetDegree(PARALLEL_ANGLE);
-    encoderForward(20, 3*COUNTS_PER_INCH);
+    accelForwardSin(10, 40, 55, 100, 7*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to Button", 13, 0);
     //To Button
 
-    encoderForwardWall(40, 40, 40*COUNTS_PER_INCH, 2.0);
+    /*encoderForwardWall(40, 40, 40*COUNTS_PER_INCH, 1.8);
     encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
-    encoderLeftTurn(25, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 8.0);
-    encoderForward(-20, 1*COUNTS_PER_INCH);
+    encoderLeftTurn(30, COUNTS_PER_90_DEGREES - 12);*/
+    encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 6.0);
+    encoderForward(-20, (int)(0.7*COUNTS_PER_INCH));
 
-    
-    LCD.WriteRC("Pulling Core.", 13, 0);
 
     //Pull Core
-    encoderRightTurn(20, COUNTS_PER_90_DEGREES + 10);
-    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 1.0);
+    //encoderRightTurn(40, COUNTS_PER_90_DEGREES + 20);
+    accelRightSin(20, 60, COUNTS_PER_90_DEGREES - 12);
+    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.8);
+
+    LCD.WriteRC("Pulling Core.", 13, 0);
+    rightMotor.SetPercent(-20);
     yawServo.SetDegree(TURN_ANGLE);
     rollServo.SetPercent(50.0);
-    Sleep(1.0);
+    Sleep(0.1);
+    rightMotor.Stop();
+    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
     rollServo.Stop();
     yawServo.SetDegree(0);
     encoderForward(-50, 4*COUNTS_PER_INCH);
-    leftMotor.SetPercent(-15);
-    rightMotor.SetPercent(-15);
+    leftMotor.SetPercent(-20);
+    rightMotor.SetPercent(-20);
     while(centerOpto.Value() > CENTER_OPTO_ORANGE + 0.8);
     encoderForward(-15, (int)(.9*COUNTS_PER_INCH));
     leftMotor.Stop();
     rightMotor.Stop();
     encoderRightTurn(20, (int)(0.5*COUNTS_PER_90_DEGREES));
-    encoderForwardWall(-30, -30, 20*COUNTS_PER_INCH, 3.2);
+    encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 1.2);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
 
     /*RPSMoveTo(10, 48, 25);
@@ -244,64 +239,48 @@ void run_final() {
     //Pick up core
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(0.5);
-    encoderForward(30, 12*COUNTS_PER_INCH);
+    encoderForward(30, 4*COUNTS_PER_INCH);
+    accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 20);
     //Move down ramp
-    RPSMoveTo(34, 16, 30);
+    //RPSPointTo(32, 16, 30);
+    //leftTurnRPS(350, 15);
+    encoderForward(40, 15*COUNTS_PER_INCH);
     leftTurnRPS(350, 15);
+
 
     switch(color) {
         //NONE, measure again
         case 0:
-            RPSMoveTo(30, 20, 25);
-            turnRPS(173, 20);
-            encoderForward(30, 4*COUNTS_PER_INCH);
-            color = getColorCDS();
-            if(color == 1) {
-                encoderForward(20, 3*COUNTS_PER_INCH);
-                encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-                encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
-                rollServo.SetPercent(-50.0);
-                Sleep(3.5);
-                rollServo.Stop();
-                encoderForward(20, 4*COUNTS_PER_INCH);
-                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-                encoderForwardWall(30, 30, 10*COUNTS_PER_INCH, 1.5);
-            } else if(color == 2) {
-                encoderForward(-20, 3*COUNTS_PER_INCH);
-                encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-                encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
-                rollServo.SetPercent(-50.0);
-                Sleep(3.5);
-                rollServo.Stop();
-                encoderForward(20, 4*COUNTS_PER_INCH);
-                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-                encoderForwardWall(30, 30, 10*COUNTS_PER_INCH, 1.5);
-            } else {
 
-            }
         break;
         //RED
         case 1:
             yawServo.SetDegree(TURN_ANGLE);
             //Move 7 inches towards red bucket.
-            encoderForward(-20, 7*COUNTS_PER_INCH);
+            encoderForward(-20, (int)(5.75*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
-            rollServo.SetPercent(-50.0);
-            Sleep(3.5);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
+            rollServo.SetPercent(-75.0);
+            Sleep(2.5);
             rollServo.Stop();
-            encoderForward(20, 4*COUNTS_PER_INCH);
+            /*encoderForward(20, 4*COUNTS_PER_INCH);
             encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-            encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.5);
+            encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.5);*/
+            leftMotor.SetPercent(50);
+            rightMotor.SetPercent(70);
+            Sleep(0.7);
+            leftMotor.SetPercent(70);
+            rightMotor.SetPercent(50);
+            Sleep(0.6);
         break;
         //BLUE
         case 2:
             yawServo.SetDegree(TURN_ANGLE);
             //encoderForward(20, 1*COUNTS_PER_INCH);
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
-            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 3.5);
-            rollServo.SetPercent(-50.0);
-            Sleep(3.5);
+            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
+            rollServo.SetPercent(-75.0);
+            Sleep(2.5);
             rollServo.Stop();
             encoderForward(20, 4*COUNTS_PER_INCH);
             encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
@@ -724,6 +703,64 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
     leftMotor.Stop();
 }
 
+void accelForwardSin(float minPercent, float maxPercent, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+    leftMotor.SetPercent(minPercent);
+    rightMotor.SetPercent(maxPercent);
+    float startTime = TimeNow();
+    while ((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+        float motorPercent = (maxPercent - minPercent) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercent;
+        leftMotor.SetPercent(motorPercent);
+        rightMotor.SetPercent(motorPercent);
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+    leftMotor.SetPercent(minPercentLeft);
+    rightMotor.SetPercent(maxPercentRight);
+    float startTime = TimeNow();
+    while ((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+        leftMotor.SetPercent((maxPercentLeft - minPercentLeft) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercentLeft);
+        rightMotor.SetPercent((maxPercentRight - minPercentRight) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercentRight);
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void accelLeftSin(int minPercent, int maxPercent, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+    leftMotor.SetPercent(-minPercent);
+    rightMotor.SetPercent(minPercent);
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
+        float motorPercent = (maxPercent - minPercent) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercent;
+        leftMotor.SetPercent(-motorPercent);
+        rightMotor.SetPercent(motorPercent);
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+void accelRightSin(int minPercent, int maxPercent, int counts) {
+    rightEncoder.ResetCounts();
+    leftEncoder.ResetCounts();
+    leftMotor.SetPercent(minPercent);
+    rightMotor.SetPercent(-minPercent);
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
+        float motorPercent = (maxPercent - minPercent) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercent;
+        leftMotor.SetPercent(motorPercent);
+        rightMotor.SetPercent(-motorPercent);
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
+
 //This one is only used for the times when it hits a wall and stops, to make sure it can back up.
 void encoderForwardWall(int leftPercent, int rightPercent, int counts, double backTime) {
     rightEncoder.ResetCounts();
@@ -866,25 +903,26 @@ void displayColor() {
     if(cdsCell.Value() < .4 + CDS_RED) {
         LCD.SetBackgroundColor(RED);
         LCD.SetFontColor(BLUE);
-        LCD.WriteLine("ITS RED! REEEEEDDDDDDDDD!!!!");
+        LCD.WriteRC("ITS RED! REEEEEDDDDDDDDD!!!!",0,1);
     } else {
         if(cdsCell.Value() < .5 + CDS_BLUE) {
            LCD.SetBackgroundColor(BLUE);
            LCD.SetFontColor(RED);
-           LCD.WriteLine("It's blue.");
+           LCD.WriteRC("It's blue.", 0, 1);
         } else {
            LCD.SetBackgroundColor(BLACK);
            LCD.SetFontColor(WHITE);
-           LCD.WriteLine("No Color");
+           LCD.WriteRC("No Color", 0, 1);
         }
     }
+    LCD.WriteRC(cdsCell.Value(), 4, 1);
 }
 
 //1 for red, 2 for blue. 0 For none.
 int getColorCDS() {
-    if(cdsCell.Value() < .4 + CDS_RED) {
+    if(cdsCell.Value() < .8 + CDS_RED) {
         return 1;
-    } else if(cdsCell.Value() < .5 + CDS_BLUE) {
+    } else if(cdsCell.Value() < .9 + CDS_BLUE) {
        return 2;
     } else {
        return 0;

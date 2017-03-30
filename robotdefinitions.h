@@ -43,7 +43,7 @@ enum LineStates {
 //RPS Offset, to make sure it doesn't turn too far.
 #define RPS_OFFSET 8
 
-//CDS Cell readings for different lights with no filter.
+//CDS Cell readings for different lights with red filter.
 #define CDS_RED .5
 #define CDS_BLUE 1.8
 #define CDS_NONE 3.0
@@ -67,7 +67,7 @@ enum LineStates {
 #define SERVO_MAX 2355
 #define SERVO_MIN 500
 #define PARALLEL_ANGLE 95.
-#define LEVER_ANGLE 40.
+#define LEVER_ANGLE 35.
 #define TURN_ANGLE 100.
 #define SAT_ANGLE 45.
 
@@ -95,6 +95,10 @@ void encoderForward(int leftPercent, int rightPercent, int counts);
 void encoderLeftTurn(int motorPower, int counts);
 void encoderRightTurn(int motorPower, int counts);
 void encoderForwardWall(int leftPercent, int rightPercent, int counts, double backTime);
+void accelForwardSin(float minPercent, float maxPercent, int counts);
+void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts);
+void accelLeftSin(int minPercent, int maxPercent, int counts);
+void accelRightSin(int minPercent, int maxPercent, int counts);
 
 void leftTurnRPS(float finalheading, float power);
 void rightTurnRPS(float finalheading, float power);

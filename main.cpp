@@ -125,20 +125,21 @@ void run_final() {
     LCD.SetFontColor(WHITE);
     waitForLight();
     //Around wall
-    encoderForward(35, 6*COUNTS_PER_INCH);
+    accelForwardSin(20, 60, (int)(5.5*COUNTS_PER_INCH));
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     Sleep(0.1);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
-    encoderForward(20, (int)(1.4*COUNTS_PER_INCH));
+    encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 8);
+    encoderForward(20, (int)(1.3*COUNTS_PER_INCH));
     encoderForward(20, (int)(1*COUNTS_PER_INCH));
-    Sleep(0.2);
+    Sleep(0.4);
     displayColor();
     int color = getColorCDS();
     if(color < 1 || color > 2) {
         color = 1;
     }
+    Sleep(0.2);
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
-    accelForwardSin(40, 90, 8*COUNTS_PER_INCH);
+    accelForwardSin(40, 90, 45, 95, 8*COUNTS_PER_INCH);
     //Turn left a little to avoid hitting the dish.
     encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
     yawServo.SetDegree(SAT_ANGLE);
@@ -147,14 +148,11 @@ void run_final() {
     encoderForwardWall(-30, -30, 8*COUNTS_PER_INCH, 1.5);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     encoderRightTurn(30, 10*COUNTS_PER_90_DEGREES/9);
-    encoderForward(-20, 3*COUNTS_PER_INCH);
+    //Line up against wall after turning dish
+    encoderForwardWall(30, 30, 4*COUNTS_PER_INCH, 1.0);
     yawServo.SetDegree(0);
-    Sleep(0.5);
-    turnRPS(5, 15);
-    encoderForward(-20, -20, 2*COUNTS_PER_INCH);
-    encoderLeftTurn(35, 78*COUNTS_PER_90_DEGREES/90);
-    Sleep(0.1);
-    turnRPS(80, 15);
+    encoderForward(-30, -30, (int)(7*COUNTS_PER_INCH));
+    encoderLeftTurn(35, COUNTS_PER_90_DEGREES);
     Sleep(0.1);
 
     LCD.WriteRC("Going up ramp.", 13, 0);
@@ -164,7 +162,7 @@ void run_final() {
     encoderForward(52, 50, 4*COUNTS_PER_INCH);
     encoderForward(40, 6*COUNTS_PER_INCH);
     encoderForward(30, 1*COUNTS_PER_INCH);*/
-    accelForwardSin(44, 94, 40, 90, 18*COUNTS_PER_INCH);
+    accelForwardSin(40, 90, 40, 90, 17*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to lever.", 13, 0);
     //Back up into lever
@@ -259,17 +257,17 @@ void run_final() {
         case 1:
             yawServo.SetDegree(TURN_ANGLE);
             //Move 7 inches towards red bucket.
-            encoderForward(-20, (int)(6.5*COUNTS_PER_INCH));
+            encoderForward(-20, (int)(7.1*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
             encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
-            rollServo.SetPercent(-75.0);
-            Sleep(2.5);
+            rollServo.SetPercent(-100.0);
+            Sleep(1.8);
             rollServo.Stop();
             /*encoderForward(20, 4*COUNTS_PER_INCH);
             encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
             encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.5);*/
             leftMotor.SetPercent(50);
-            rightMotor.SetPercent(70);
+            rightMotor.SetPercent(75);
             Sleep(0.8);
             leftMotor.SetPercent(70);
             rightMotor.SetPercent(50);
@@ -281,8 +279,8 @@ void run_final() {
             encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
             encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
-            rollServo.SetPercent(-75.0);
-            Sleep(2.5);
+            rollServo.SetPercent(-100.0);
+            Sleep(1.8);
             rollServo.Stop();
             encoderForward(20, 4*COUNTS_PER_INCH);
             encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
@@ -902,12 +900,12 @@ void waitForLight() {
 }
 
 void displayColor() {
-    if(cdsCell.Value() < .4 + CDS_RED) {
+    if(cdsCell.Value() < 1.0 + CDS_RED) {
         LCD.SetBackgroundColor(RED);
         LCD.SetFontColor(BLUE);
         LCD.WriteRC("ITS RED! REEEEEDDDDDDDDD!!!!",0,1);
     } else {
-        if(cdsCell.Value() < .5 + CDS_BLUE) {
+        if(cdsCell.Value() < 1.0 + CDS_BLUE) {
            LCD.SetBackgroundColor(BLUE);
            LCD.SetFontColor(RED);
            LCD.WriteRC("It's blue.", 0, 1);
@@ -922,12 +920,12 @@ void displayColor() {
 
 //1 for red, 2 for blue. 0 For none.
 int getColorCDS() {
-    if(cdsCell.Value() < .8 + CDS_RED) {
+    if(cdsCell.Value() < 1.0 + CDS_RED) {
         return 1;
-    } else if(cdsCell.Value() < .9 + CDS_BLUE) {
+    } else if(cdsCell.Value() < 1.0 + CDS_BLUE) {
        return 2;
     } else {
-       return 0;
+       return 2;
     }
 }
 

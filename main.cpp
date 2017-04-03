@@ -13,6 +13,8 @@
 //My header file.
 #include <robotdefinitions.h>
 
+#define SPEED_MODE false
+
 AnalogInputPin rightOpto(FEHIO::P2_0);
 AnalogInputPin centerOpto(FEHIO::P2_1);
 AnalogInputPin leftOpto(FEHIO::P2_2);
@@ -34,29 +36,11 @@ DigitalInputPin right_switch(FEHIO::P1_0);
 
 int main(void)
 {
-    //hardware check
-    //post();
     //Go to the main menu after startup.
     yawServo.SetMin(SERVO_MIN);
     yawServo.SetMax(SERVO_MAX);
-    //Sleep(5.0);
-    //rollServo.SetPercent(0);
     displayMenu();
     return 0;
-}
-
-//Power On Self Test
-void post() {
-    LCD.Clear(BLACK);
-    LCD.SetFontColor(WHITE);
-    encoderForward(10, 3*COUNTS_PER_INCH);
-    LCD.WriteLine("Left Counts: ");
-    LCD.Write(leftEncoder.Counts());
-    LCD.WriteLine("Right Counts: ");
-    LCD.Write(leftEncoder.Counts());
-    LCD.WriteLine("Battery Voltage: ");
-    LCD.Write(Battery.Voltage());
-    Sleep(2.0);
 }
 
 void displayMenu() {
@@ -66,7 +50,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"RunCore", "CalRPS", "CalServ", "LineFollow", "CheckVitals", "CheckRPS"};
+    char labels[NUM_MENU_BUTTONS][20] = {"RunCore", "CalRPS", "CalServ", "DriveTurn", "CheckVitals", "Test"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -81,7 +65,11 @@ void displayMenu() {
             } else if(buttons[2].Pressed(x,y,0)) {
                 test_1();
             } else if(buttons[3].Pressed(x,y,0)) {
-                follow_straight_line(-15);
+                bumpWall(30);
+                encoderForward(-30, 10*COUNTS_PER_INCH);
+                encoderForward(30, 8*COUNTS_PER_INCH);
+                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
+                encoderForward(30, 8*COUNTS_PER_INCH);
             } else if(buttons[4].Pressed(x,y,0)) {
                 Sleep(1);
                 LCD.SetBackgroundColor(WHITE);
@@ -102,22 +90,47 @@ void displayMenu() {
                     LCD.WriteRC(RPS.Heading(), 5, 13);
                     LCD.WriteRC("CdS Cell:", 6, 0);
                     LCD.WriteRC(cdsCell.Value(), 6, 10);
-                    LCD.WriteRC(TimeNow(), 8, 0);
+                    LCD.WriteRC("Left Bump:", 7, 0);
+                    LCD.WriteRC(left_switch.Value(), 7, 11);
+                    LCD.WriteRC("Right Bump:", 8, 0);
+                    LCD.WriteRC(right_switch.Value(), 8, 12);
+                    LCD.WriteRC("Left Shaft:", 9, 0);
+                    LCD.WriteRC(leftEncoder.Counts(), 9, 12);
+                    LCD.WriteRC("Right Shaft:", 10, 0);
+                    LCD.WriteRC(rightEncoder.Counts(), 10, 13);
+                    LCD.WriteRC("Battery Charge:", 11, 0);
+                    LCD.WriteRC(Battery.Voltage(), 11, 16);
+                    LCD.WriteRC(TimeNow(), 12, 16);
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
-                yawServo.SetDegree(LEVER_ANGLE);
-                Sleep(0.5);
-                encoderForward(30, 2*COUNTS_PER_INCH);
-                accelForwardSin(40, 90, 20, 65, 8*COUNTS_PER_INCH);
-                //Move down ramp
-                //RPSPointTo(32, 16, 30);
-                //leftTurnRPS(350, 15);
-                RPSPointTowards(32, 16, 20);
-                accelForwardSin(20, 80, 12*COUNTS_PER_INCH);
+                encoderForward(30,(int)(0.2*COUNTS_PER_INCH));
+                flippy_thing();
             }
 
     }
     return;
+}
+
+void flippy_thing() {
+    //Pick up core
+    yawServo.SetDegree(LEVER_ANGLE);
+    Sleep(0.5);
+    encoderForward(30, 4*COUNTS_PER_INCH);
+    accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
+    encoderForward(40, 10*COUNTS_PER_INCH);
+    yawServo.SetDegree(SAT_ANGLE);
+    accelForwardSin(40, 70, 0, 20, (int)(12.5*COUNTS_PER_INCH));
+    yawServo.SetDegree(TURN_ANGLE);
+    encoderForwardWall(-40, -40, 8*COUNTS_PER_INCH, 1.8);
+    rollServo.SetPercent(-100.0);
+    Sleep(1.8);
+    rollServo.Stop();
+    leftMotor.SetPercent(50);
+    rightMotor.SetPercent(75);
+    Sleep(0.75);
+    leftMotor.SetPercent(70);
+    rightMotor.SetPercent(50);
+    Sleep(0.7);
 }
 
 void run_final() {
@@ -141,27 +154,24 @@ void run_final() {
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
     accelForwardSin(40, 90, 45, 95, 8*COUNTS_PER_INCH);
     //Turn left a little to avoid hitting the dish.
-    encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
+    //encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
+    bumpWall(50);
     yawServo.SetDegree(SAT_ANGLE);
     encoderForward(-20, (int)(1.8*COUNTS_PER_INCH));
     encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(-30, -30, 8*COUNTS_PER_INCH, 1.5);
+    encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 1.0);
+    yawServo.SetDegree(SAT_ANGLE + 15);
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     encoderRightTurn(30, 10*COUNTS_PER_90_DEGREES/9);
     //Line up against wall after turning dish
-    encoderForwardWall(30, 30, 4*COUNTS_PER_INCH, 1.0);
+    bumpWall(40);
     yawServo.SetDegree(0);
+    //Move into position to move up ramp
     encoderForward(-30, -30, (int)(7*COUNTS_PER_INCH));
     encoderLeftTurn(35, COUNTS_PER_90_DEGREES);
     Sleep(0.1);
-
+    //Move up ramp
     LCD.WriteRC("Going up ramp.", 13, 0);
-    //Up ramp
-    /*encoderForward(42, 40, 4*COUNTS_PER_INCH);
-    encoderForward(42, 40, 4*COUNTS_PER_INCH);
-    encoderForward(52, 50, 4*COUNTS_PER_INCH);
-    encoderForward(40, 6*COUNTS_PER_INCH);
-    encoderForward(30, 1*COUNTS_PER_INCH);*/
     accelForwardSin(40, 90, 40, 90, 17*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to lever.", 13, 0);
@@ -176,7 +186,7 @@ void run_final() {
     //encoderRightTurn(25, 21*COUNTS_PER_90_DEGREES/18);
     Sleep(0.1);
     //Corrects left to hit lever
-    encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 1.2);
+    encoderForwardWall(-40, -40, 8*COUNTS_PER_INCH, 0.9);
     rightMotor.SetPercent(30);
     Sleep(0.1);
     rightMotor.Stop();
@@ -185,31 +195,28 @@ void run_final() {
     yawServo.SetDegree(LEVER_ANGLE);
     encoderForward(30, 3*COUNTS_PER_INCH);
     yawServo.SetDegree(PARALLEL_ANGLE);
-    accelForwardSin(10, 40, 55, 100, 7*COUNTS_PER_INCH);
+    //Pivot to Button
+    accelForwardSin(10, 35, 55, 100, 7*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to Button", 13, 0);
     //To Button
-
-    /*encoderForwardWall(40, 40, 40*COUNTS_PER_INCH, 1.8);
-    encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
-    encoderLeftTurn(30, COUNTS_PER_90_DEGREES - 12);*/
     encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 6.0);
     encoderForward(-20, (int)(0.7*COUNTS_PER_INCH));
-
 
     //Pull Core
     //encoderRightTurn(40, COUNTS_PER_90_DEGREES + 20);
     accelRightSin(20, 45, 80*COUNTS_PER_90_DEGREES/90);
-    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.8);
+    //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.6);
+    bumpWall(40);
 
     LCD.WriteRC("Pulling Core.", 13, 0);
-    rightMotor.SetPercent(-20);
+    //rightMotor.SetPercent(-20);
     //Turn claw into correct position
     yawServo.SetDegree(TURN_ANGLE);
     rollServo.SetPercent(50.0);
-    Sleep(0.1);
-    rightMotor.Stop();
-    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
+    //Sleep(0.1);
+    //rightMotor.Stop();
+    //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
     //Back up into line
     encoderForward(-50, 4*COUNTS_PER_INCH);
     rollServo.Stop();
@@ -226,18 +233,9 @@ void run_final() {
     encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 1.2);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
 
-    /*RPSMoveTo(10, 48, 25);
-    yawServo.SetDegree(TURN_ANGLE);
-    rollServo.SetPercent(50.0);
-    Sleep(1.0);
-    rollServo.Stop();
-    RPSPointAway(10.0, 64., 15);
-    Sleep(0.5);
-    yawServo.SetDegree(0);
-    //follow_straight_line(-20);
-    encoderForwardWall(-30, -30, 18*COUNTS_PER_INCH, 3.2);
-    encoderForward(30,(int)(0.5*COUNTS_PER_INCH));*/
-
+    if(SPEED_MODE) {
+        flippy_thing();
+    }
     //Pick up core
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(0.5);
@@ -276,9 +274,9 @@ void run_final() {
         //BLUE
         case 2:
             yawServo.SetDegree(TURN_ANGLE);
-            encoderForward(-20, (int)(1.5*COUNTS_PER_INCH));
+            encoderForward(-30, (int)(1.5*COUNTS_PER_INCH));
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
-            encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
+            encoderForwardWall(-30, -30, 7*COUNTS_PER_INCH, 2.0);
             rollServo.SetPercent(-100.0);
             Sleep(1.8);
             rollServo.Stop();
@@ -584,58 +582,6 @@ void follow_straight_line(int power) {
     }
 }
 
-//Black line following
-void follow_black_line(int power) {
-    rightMotor.SetPercent(power);
-    leftMotor.SetPercent(power);
-    while(rightOpto.Value() < LEFT_OPTO_BLACK_BG + .5) {
-     LCD.WriteLine(centerOpto.Value());
-    }
-    int state = NOT_ON_LINE;
-    double startTime = TimeNow();
-    while(true) {
-        if(TimeNow() - startTime > 3.0) {
-            break;
-        }
-        if(leftOpto.Value() < LEFT_OPTO_BLACK_BG + 0.7)
-            state = LINE_ON_LEFT;
-        if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG + 0.7)
-            state = LINE_ON_RIGHT;
-        if(centerOpto.Value() < CENTER_OPTO_BLACK_BG + 0.7) {
-            if(leftOpto.Value() < LEFT_OPTO_BLACK_BG + 0.7)
-                state = ON_LINE_SECOND;
-            if(rightOpto.Value() < RIGHT_OPTO_BLACK_BG + 0.7)
-                state = ON_LINE_FIRST;
-        } else {
-            if(state == LINE_ON_RIGHT) {
-                state = ON_LINE_SECOND;
-            } else if(state == LINE_ON_LEFT) {
-                state = ON_LINE_FIRST;
-            }
-        }
-        switch(state) {
-        case LINE_ON_LEFT:
-            rightMotor.SetPercent(power - 6);
-            leftMotor.SetPercent(power);
-        break;
-        case LINE_ON_RIGHT:
-            rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power - 6);
-        break;
-        case ON_LINE_FIRST:
-            rightMotor.SetPercent(power);
-            leftMotor.SetPercent(power - 2);
-        break;
-        case ON_LINE_SECOND:
-            rightMotor.SetPercent(power - 2);
-            leftMotor.SetPercent(power);
-        break;
-        default:
-        break;
-        }
-    }
-}
-
 void follow_curve() {
     rightMotor.SetPercent(BASE_MOTOR_POWER);
     leftMotor.SetPercent(BASE_MOTOR_POWER);
@@ -732,6 +678,32 @@ void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercen
     leftMotor.Stop();
 }
 
+void accelForwardStay(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts, int highCounts) {
+    int highStart = (counts - highCounts)/2;
+    int highEnd = counts - highStart;
+    leftMotor.SetPercent(-minPercentLeft);
+    rightMotor.SetPercent(minPercentRight);
+    while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
+        int elapsedCounts = (leftEncoder.Counts()+rightEncoder.Counts())/2;
+        if(elapsedCounts > highStart && elapsedCounts < highEnd) {
+            leftMotor.SetPercent(maxPercentLeft);
+            rightMotor.SetPercent(maxPercentRight);
+        } else if(elapsedCounts < highStart) {
+            float motorPercentLeft = (maxPercentLeft - minPercentLeft) * sin((float)elapsedCounts * 3.14159/((float)highStart*2)) + minPercentLeft;
+            float motorPercentRight = (maxPercentRight - minPercentRight) * sin((float)elapsedCounts * 3.14159/((float)highStart*2)) + minPercentRight;
+            leftMotor.SetPercent(motorPercentLeft);
+            rightMotor.SetPercent(motorPercentRight);
+        } else {
+            float motorPercentLeft = (maxPercentLeft - minPercentLeft) * sin(((float)(elapsedCounts - highCounts)) * 3.14159/((float)highStart*2)) + minPercentLeft;
+            float motorPercentRight = (maxPercentRight - minPercentRight) * sin(((float)(elapsedCounts - highCounts)) * 3.14159/((float)highStart*2)) + minPercentRight;
+            leftMotor.SetPercent(motorPercentLeft);
+            rightMotor.SetPercent(motorPercentRight);
+        }
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+}
+
 void accelLeftSin(int minPercent, int maxPercent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -760,6 +732,23 @@ void accelRightSin(int minPercent, int maxPercent, int counts) {
     leftMotor.Stop();
 }
 
+void bumpWall(int percent) {
+    while(left_switch.Value() || right_switch.Value()) {
+
+        if(left_switch.Value()) {
+            leftMotor.SetPercent(percent);
+        } else {
+            leftMotor.SetPercent(-10);
+        }
+        if(right_switch.Value()) {
+            rightMotor.SetPercent(percent);
+        } else {
+            rightMotor.SetPercent(-10);
+        }
+    }
+    leftMotor.Stop();
+    rightMotor.Stop();
+}
 
 //This one is only used for the times when it hits a wall and stops, to make sure it can back up.
 void encoderForwardWall(int leftPercent, int rightPercent, int counts, double backTime) {
@@ -901,11 +890,13 @@ void waitForLight() {
 
 void displayColor() {
     if(cdsCell.Value() < 1.0 + CDS_RED) {
+        LCD.Clear(RED);
         LCD.SetBackgroundColor(RED);
         LCD.SetFontColor(BLUE);
         LCD.WriteRC("ITS RED! REEEEEDDDDDDDDD!!!!",0,1);
     } else {
         if(cdsCell.Value() < 1.0 + CDS_BLUE) {
+            LCD.Clear(BLUE);
            LCD.SetBackgroundColor(BLUE);
            LCD.SetFontColor(RED);
            LCD.WriteRC("It's blue.", 0, 1);

@@ -71,18 +71,22 @@ enum LineStates {
 #define TURN_ANGLE 100.
 #define SAT_ANGLE 45.
 
+//Operating System
 void post();
 void displayMenu();
 void run_final();
 void test_1();
 void test_2();
 void motor_test();
+
+//Auxillary Functions
 void measure_optosensors();
 void follow_straight_line(int power);
 void follow_black_line(int power);
 void follow_curve();
+void flippy_thing();
 
-//Specific Navigation
+//Performance Tests
 void moveStartToButton();
 void moveStartToLever();
 void moveStartToCore();
@@ -91,15 +95,17 @@ void moveStartToSat();
 //General navigation
 void encoderForward(int percent, int counts);
 void encoderForward(int leftPercent, int rightPercent, int counts);
-
 void encoderLeftTurn(int motorPower, int counts);
 void encoderRightTurn(int motorPower, int counts);
 void encoderForwardWall(int leftPercent, int rightPercent, int counts, double backTime);
 void accelForwardSin(float minPercent, float maxPercent, int counts);
 void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts);
+void accelForwardStay(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts, int highCounts);
 void accelLeftSin(int minPercent, int maxPercent, int counts);
 void accelRightSin(int minPercent, int maxPercent, int counts);
+void bumpWall(int percent);
 
+//RPS Navigation
 void leftTurnRPS(float finalheading, float power);
 void rightTurnRPS(float finalheading, float power);
 void turnRPS(float finalHeading, float power);
@@ -108,6 +114,7 @@ void RPSPointTowards(float x, float y, int power);
 void RPSPointAway(float x, float y, int power);
 void checkRPSHeading(float heading);
 
+//CdS Cell
 void waitForLight();
 void displayColor();
 int getColorCDS();

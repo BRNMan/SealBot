@@ -9,7 +9,7 @@
 //Testing speed
 #define BASE_MOTOR_POWER 20
 
-#define TIME_UNTIL_STOP 7
+#define TIME_UNTIL_STOP 6.0
 
 //Optosensor readings
 #define LEFT_STRAIGHT .935
@@ -84,7 +84,7 @@ void measure_optosensors();
 void follow_straight_line(int power);
 void follow_black_line(int power);
 void follow_curve();
-void flippy_thing();
+void flippy_thing(int color);
 
 //Performance Tests
 void moveStartToButton();

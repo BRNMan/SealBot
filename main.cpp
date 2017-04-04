@@ -13,7 +13,7 @@
 //My header file.
 #include <robotdefinitions.h>
 
-#define SPEED_MODE false
+#define SPEED_MODE true
 
 AnalogInputPin rightOpto(FEHIO::P2_0);
 AnalogInputPin centerOpto(FEHIO::P2_1);
@@ -104,33 +104,57 @@ void displayMenu() {
                 }
             } else if(buttons[5].Pressed(x,y,0)) {
                 encoderForward(30,(int)(0.2*COUNTS_PER_INCH));
-                flippy_thing();
+                flippy_thing(2);
             }
 
     }
     return;
 }
 
-void flippy_thing() {
-    //Pick up core
-    yawServo.SetDegree(LEVER_ANGLE);
-    Sleep(0.5);
-    encoderForward(30, 4*COUNTS_PER_INCH);
-    accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
-    encoderForward(40, 10*COUNTS_PER_INCH);
-    yawServo.SetDegree(SAT_ANGLE);
-    accelForwardSin(40, 70, 0, 20, (int)(12.5*COUNTS_PER_INCH));
-    yawServo.SetDegree(TURN_ANGLE);
-    encoderForwardWall(-40, -40, 8*COUNTS_PER_INCH, 1.8);
-    rollServo.SetPercent(-100.0);
-    Sleep(1.8);
-    rollServo.Stop();
-    leftMotor.SetPercent(50);
-    rightMotor.SetPercent(75);
-    Sleep(0.75);
-    leftMotor.SetPercent(70);
-    rightMotor.SetPercent(50);
-    Sleep(0.7);
+void flippy_thing(int color) {
+    switch(color) {
+    //Red
+    case 1:
+        //Pick up core
+        yawServo.SetDegree(LEVER_ANGLE);
+        Sleep(0.5);
+        encoderForward(30, 4*COUNTS_PER_INCH);
+        accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
+        encoderForward(40, 10*COUNTS_PER_INCH);
+        yawServo.SetDegree(SAT_ANGLE);
+        accelForwardSin(40, 70, 5, 20, (int)(12.2*COUNTS_PER_INCH));
+        yawServo.SetDegree(TURN_ANGLE);
+        encoderForwardWall(-50, -43, 8*COUNTS_PER_INCH, 1.5);
+        rollServo.SetPercent(-100.0);
+        Sleep(1.6);
+        rollServo.Stop();
+        leftMotor.SetPercent(50);
+        rightMotor.SetPercent(55);
+        Sleep(0.75);
+        leftMotor.SetPercent(55);
+        rightMotor.SetPercent(50);
+        Sleep(0.7);
+        break;
+    //Blue
+    case 2:
+        //Pick up core
+        yawServo.SetDegree(LEVER_ANGLE);
+        Sleep(0.5);
+        encoderForward(30, 4*COUNTS_PER_INCH);
+        accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
+        encoderForward(45, 40, 12*COUNTS_PER_INCH);
+        accelLeftSin(20, 80, 210*COUNTS_PER_90_DEGREES/90);
+        yawServo.SetDegree(TURN_ANGLE);
+        encoderForwardWall(-30, -30, 8*COUNTS_PER_90_DEGREES, 2.0);
+        rollServo.SetPercent(-100.0);
+        Sleep(1.6);
+        rollServo.Stop();
+        accelForwardSin(5, 20, 40, 70, 4.0*COUNTS_PER_INCH);
+        accelForwardSin(40, 70, 5*COUNTS_PER_INCH);
+        accelForwardSin(40, 70, 5, 20, (int)(4*COUNTS_PER_INCH));
+        encoderForwardWall(40,40,3*COUNTS_PER_INCH, 2.0);
+        break;
+    }
 }
 
 void run_final() {
@@ -160,29 +184,40 @@ void run_final() {
     encoderForward(-20, (int)(1.8*COUNTS_PER_INCH));
     encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
     encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 1.0);
-    yawServo.SetDegree(SAT_ANGLE + 15);
-    encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
-    encoderRightTurn(30, 10*COUNTS_PER_90_DEGREES/9);
-    //Line up against wall after turning dish
-    bumpWall(40);
-    yawServo.SetDegree(0);
-    //Move into position to move up ramp
-    encoderForward(-30, -30, (int)(7*COUNTS_PER_INCH));
-    encoderLeftTurn(35, COUNTS_PER_90_DEGREES);
-    Sleep(0.1);
-    //Move up ramp
-    LCD.WriteRC("Going up ramp.", 13, 0);
-    accelForwardSin(40, 90, 40, 90, 17*COUNTS_PER_INCH);
+    yawServo.SetDegree(SAT_ANGLE + 20);
+    if(!SPEED_MODE) {
+        encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
+        encoderRightTurn(30, 10*COUNTS_PER_90_DEGREES/9);
+        //Line up against wall after turning dish
+        bumpWall(40);
+        yawServo.SetDegree(0);
+        //Move into position to move up ramp
+        encoderForward(-30, -30, (int)(7*COUNTS_PER_INCH));
+        encoderLeftTurn(35, COUNTS_PER_90_DEGREES);
+        Sleep(0.1);
+        //Back up into lever
+        leftMotor.SetPercent(-15);
+        rightMotor.SetPercent(-15);
+        while(RPS.Y()> 48.5);
+        leftMotor.Stop();
+        rightMotor.Stop();
+        yawServo.SetDegree(PARALLEL_ANGLE);
+        accelRightSin(20, 50, 22*COUNTS_PER_90_DEGREES/18);
+        //Move up ramp
+        LCD.WriteRC("Going up ramp.", 13, 0);
+        accelForwardSin(40, 90, 40, 90, 17*COUNTS_PER_INCH);
+    } else {
+        yawServo.SetDegree(SAT_ANGLE + 26);
+        encoderForward(40, 2*COUNTS_PER_INCH);
+        accelForwardSin(10, 30, 40, 80, 4*COUNTS_PER_INCH);
+        encoderForward(40, (int)(4.5*COUNTS_PER_INCH));
+        accelForwardSin(40, 80, 10, 30, 4*COUNTS_PER_INCH);
+        encoderForward(60, (int)(6.5*COUNTS_PER_INCH));
+        accelRightSin(20, 50, 3*COUNTS_PER_90_DEGREES/2); //This bothers me...
+    }
 
     LCD.WriteRC("Going to lever.", 13, 0);
-    //Back up into lever
-    leftMotor.SetPercent(-15);
-    rightMotor.SetPercent(-15);
-    while(RPS.Y()> 48.5);
-    leftMotor.Stop();
-    rightMotor.Stop();
-    yawServo.SetDegree(PARALLEL_ANGLE);
-    accelRightSin(20, 50, 22*COUNTS_PER_90_DEGREES/18);
+
     //encoderRightTurn(25, 21*COUNTS_PER_90_DEGREES/18);
     Sleep(0.1);
     //Corrects left to hit lever
@@ -218,23 +253,23 @@ void run_final() {
     //rightMotor.Stop();
     //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
     //Back up into line
-    encoderForward(-50, 4*COUNTS_PER_INCH);
+    encoderForward(-50, (int)(5.9*COUNTS_PER_INCH));
     rollServo.Stop();
     yawServo.SetDegree(0);
     leftMotor.SetPercent(-20);
     rightMotor.SetPercent(-20);
     //Wait for center line to appear under optosensor
     while(centerOpto.Value() > CENTER_OPTO_ORANGE + 0.8);
-    encoderForward(-15, (int)(1.6*COUNTS_PER_INCH));
+    encoderForward(-30, (int)(1.55*COUNTS_PER_INCH));
     leftMotor.Stop();
     rightMotor.Stop();
     Sleep(0.2);
-    encoderRightTurn(20, (int)(0.5*COUNTS_PER_90_DEGREES));
+    encoderRightTurn(30, (int)(0.5*COUNTS_PER_90_DEGREES));
     encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 1.2);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
 
     if(SPEED_MODE) {
-        flippy_thing();
+        flippy_thing(color);
     }
     //Pick up core
     yawServo.SetDegree(LEVER_ANGLE);

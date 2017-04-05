@@ -1,2 +1,2 @@
    text	   data	    bss	    dec	    hex	filename
-  61436	   3424	   5620	  70480	  11350	../SealBot.elf
+  62348	   3424	   5624	  71396	  116e4	../SealBot.elf

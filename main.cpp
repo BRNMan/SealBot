@@ -34,6 +34,11 @@ FEHServo yawServo(FEHServo::Servo0);
 DigitalInputPin left_switch(FEHIO::P1_1);
 DigitalInputPin right_switch(FEHIO::P1_0);
 
+DigitalOutputPin LEDS[4] = { DigitalOutputPin(FEHIO::P1_2),
+                             DigitalOutputPin(FEHIO::P1_3),
+                             DigitalOutputPin(FEHIO::P1_4),
+                             DigitalOutputPin(FEHIO::P1_5)};
+
 int main(void)
 {
     //Go to the main menu after startup.
@@ -50,7 +55,7 @@ void displayMenu() {
     //Declare our menu buttons.
     FEHIcon::Icon buttons[NUM_MENU_BUTTONS];
     //Button labels
-    char labels[NUM_MENU_BUTTONS][20] = {"RunCore", "CalRPS", "CalServ", "DriveTurn", "CheckVitals", "Test"};
+    char labels[NUM_MENU_BUTTONS][20] = {"RunCore", "CalRPS", "CalServ", "LEDTest", "CheckVitals", "Test"};
     //Draw a 3x2 array of icons with red text and blue borders.
     FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
     //Coordinates for screen touches.
@@ -65,11 +70,17 @@ void displayMenu() {
             } else if(buttons[2].Pressed(x,y,0)) {
                 test_1();
             } else if(buttons[3].Pressed(x,y,0)) {
-                bumpWall(30);
+                while(true) {
+                    for(int i = 0; i < 4; i++) { //Couldn't find size of LEDS so just said 4.
+                        Sleep(0.5);
+                        LEDS[i].Toggle();
+                    }
+                }
+                /*bumpWall(30);
                 encoderForward(-30, 10*COUNTS_PER_INCH);
                 encoderForward(30, 8*COUNTS_PER_INCH);
                 encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-                encoderForward(30, 8*COUNTS_PER_INCH);
+                encoderForward(30, 8*COUNTS_PER_INCH);*/
             } else if(buttons[4].Pressed(x,y,0)) {
                 Sleep(1);
                 LCD.SetBackgroundColor(WHITE);
@@ -143,16 +154,16 @@ void flippy_thing(int color) {
         encoderForward(30, 4*COUNTS_PER_INCH);
         accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
         encoderForward(45, 40, 12*COUNTS_PER_INCH);
-        accelLeftSin(20, 80, 210*COUNTS_PER_90_DEGREES/90);
+        accelLeftSin(20, 80, 220*COUNTS_PER_90_DEGREES/90);
         yawServo.SetDegree(TURN_ANGLE);
         encoderForwardWall(-30, -30, 8*COUNTS_PER_90_DEGREES, 2.0);
         rollServo.SetPercent(-100.0);
         Sleep(1.6);
         rollServo.Stop();
-        accelForwardSin(5, 20, 40, 70, 4.0*COUNTS_PER_INCH);
+        accelForwardSin(5, 20, 40, 70, 3.5*COUNTS_PER_INCH);
         accelForwardSin(40, 70, 5*COUNTS_PER_INCH);
-        accelForwardSin(40, 70, 5, 20, (int)(4*COUNTS_PER_INCH));
-        encoderForwardWall(40,40,3*COUNTS_PER_INCH, 2.0);
+        encoderRightTurn(40, COUNTS_PER_90_DEGREES/2);
+        encoderForwardWall(40,40,5*COUNTS_PER_INCH, 2.0);
         break;
     }
 }
@@ -165,7 +176,7 @@ void run_final() {
     accelForwardSin(20, 60, (int)(5.5*COUNTS_PER_INCH));
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     Sleep(0.1);
-    encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 8);
+    accelLeftSin(20, 40, COUNTS_PER_90_DEGREES - 8);
     encoderForward(20, (int)(1.3*COUNTS_PER_INCH));
     encoderForward(20, (int)(1*COUNTS_PER_INCH));
     Sleep(0.4);
@@ -176,7 +187,9 @@ void run_final() {
     }
     Sleep(0.2);
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
-    accelForwardSin(40, 90, 45, 95, 8*COUNTS_PER_INCH);
+    //S Turn Left into wall by satellite dish
+    accelForwardSin(30, 80, 45, 95, 3*COUNTS_PER_INCH);
+    accelForwardSin(45, 95, 30, 80, 3*COUNTS_PER_INCH);
     //Turn left a little to avoid hitting the dish.
     //encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
     bumpWall(50);
@@ -209,11 +222,11 @@ void run_final() {
     } else {
         yawServo.SetDegree(SAT_ANGLE + 26);
         encoderForward(40, 2*COUNTS_PER_INCH);
-        accelForwardSin(10, 30, 40, 80, 4*COUNTS_PER_INCH);
-        encoderForward(40, (int)(4.5*COUNTS_PER_INCH));
-        accelForwardSin(40, 80, 10, 30, 4*COUNTS_PER_INCH);
-        encoderForward(60, (int)(6.5*COUNTS_PER_INCH));
-        accelRightSin(20, 50, 3*COUNTS_PER_90_DEGREES/2); //This bothers me...
+        accelForwardSin(10, 20, 50, 80, 4*COUNTS_PER_INCH);
+        encoderForward(40, (int)(3.5*COUNTS_PER_INCH));
+        accelForwardSin(50, 80, 10, 20, 3.7*COUNTS_PER_INCH);
+        encoderForward(60, (int)(7.5*COUNTS_PER_INCH));
+        accelRightSin(20, 50, 120*COUNTS_PER_90_DEGREES/90); //This bothers me...
     }
 
     LCD.WriteRC("Going to lever.", 13, 0);
@@ -236,14 +249,14 @@ void run_final() {
     LCD.WriteRC("Going to Button", 13, 0);
     //To Button
     encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 6.0);
-    encoderForward(-20, (int)(0.7*COUNTS_PER_INCH));
+    encoderForward(-20, (int)(1.0*COUNTS_PER_INCH));
 
     //Pull Core
     //encoderRightTurn(40, COUNTS_PER_90_DEGREES + 20);
     accelRightSin(20, 45, 80*COUNTS_PER_90_DEGREES/90);
     //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.6);
     bumpWall(40);
-
+    Sleep(0.2);
     LCD.WriteRC("Pulling Core.", 13, 0);
     //rightMotor.SetPercent(-20);
     //Turn claw into correct position
@@ -253,14 +266,15 @@ void run_final() {
     //rightMotor.Stop();
     //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
     //Back up into line
-    encoderForward(-50, (int)(5.9*COUNTS_PER_INCH));
+    encoderForward(-50, (int)(4.5*COUNTS_PER_INCH));
     rollServo.Stop();
     yawServo.SetDegree(0);
+    LCD.WriteRC("Finding the Line", 13, 0);
     leftMotor.SetPercent(-20);
     rightMotor.SetPercent(-20);
     //Wait for center line to appear under optosensor
     while(centerOpto.Value() > CENTER_OPTO_ORANGE + 0.8);
-    encoderForward(-30, (int)(1.55*COUNTS_PER_INCH));
+    encoderForward(-25, (int)(1.55*COUNTS_PER_INCH));
     leftMotor.Stop();
     rightMotor.Stop();
     Sleep(0.2);

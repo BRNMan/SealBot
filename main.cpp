@@ -127,49 +127,52 @@ void displayMenu() {
 }
 
 void flippy_thing(int color) {
+    Sleep(0.2);
     switch(color) {
     //Red
     case 1: { //Limit scope of case to declare variable inside.
         //Pick up core
-        yawServo.SetDegree(LEVER_ANGLE);
+        yawServo.SetDegree(LEVER_ANGLE  - 5);
         Sleep(0.5);
-        encoderForward(30, 4*COUNTS_PER_INCH);
+        encoderForward(30, (int)(3.5*COUNTS_PER_INCH));
         accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
         encoderForward(40, 10*COUNTS_PER_INCH);
         yawServo.SetDegree(TURN_ANGLE);
-        accelForwardSin(40, 70, 5, 17, (int)(12.2*COUNTS_PER_INCH));
+        accelForwardSin(40, 70, 8, 20, (int)(13.2*COUNTS_PER_INCH));
         rollServo.SetPercent(-100.0); //Moved back
-        encoderForwardWall(-55, -43, 8*COUNTS_PER_INCH, 1.5);
-        Sleep(0.5);
+        encoderForwardWall(-48, -43, 10*COUNTS_PER_INCH, 1.5);
+        Sleep(0.3);
         rollServo.Stop();
         LEDS[7].Toggle();
         //Curve into final button
         leftMotor.SetPercent(60);
-        rightMotor.SetPercent(65);
+        rightMotor.SetPercent(70);
         //Sleep 0.75
     double startTime = TimeNow();
         while(TimeNow() - startTime < 0.75) {
             int index = ((int)((TimeNow()-startTime)/0.05))%8;
             LEDS[index].Toggle();
         }
-        leftMotor.SetPercent(65);
+        leftMotor.SetPercent(70);
         rightMotor.SetPercent(60);
         startTime = TimeNow();
-        while(TimeNow() - startTime < 0.70) {
+        while(TimeNow() - startTime < 1.2) {
             int index = ((int)((TimeNow()-startTime)/0.05))%8;
             LEDS[index].Toggle();
         }
     }
+        encoderForward(-30, 4*COUNTS_PER_INCH);
+        encoderForwardWall(40, 30, 8*COUNTS_PER_INCH, 2.0);
         break;
     //Blue
     case 2:
         //Pick up core
-        yawServo.SetDegree(LEVER_ANGLE);
+        yawServo.SetDegree(LEVER_ANGLE - 5);
         Sleep(0.5);
-        encoderForward(30, 4*COUNTS_PER_INCH);
+        encoderForward(30, (int)(3.5*COUNTS_PER_INCH));
         accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 15);
         encoderForward(45, 40, 12*COUNTS_PER_INCH);
-        accelLeftSin(20, 80, 210*COUNTS_PER_90_DEGREES/90);
+        accelLeftSin(20, 80, 220*COUNTS_PER_90_DEGREES/90);
         yawServo.SetDegree(TURN_ANGLE);
         rollServo.SetPercent(-100.0);
         encoderForwardWall(-30, -30, 8*COUNTS_PER_90_DEGREES, 1.7);
@@ -177,9 +180,10 @@ void flippy_thing(int color) {
         rollServo.Stop();
         LEDS[7].Toggle();
         accelForwardSin(5, 20, 40, 70, 3.5*COUNTS_PER_INCH);
-        accelForwardSin(40, 70, 5*COUNTS_PER_INCH);
+        accelForwardSin(40, 70, (int)(5.5*COUNTS_PER_INCH));
         encoderRightTurn(40, 55*COUNTS_PER_90_DEGREES/90);
         encoderForwardWall(40,40,5*COUNTS_PER_INCH, 2.0);
+        leftMotor.SetPercent(50);
         break;
     }
 }
@@ -202,6 +206,7 @@ void run_final() {
         color = 1;
     }
     LEDS[1].Toggle();
+    yawServo.SetDegree(SAT_ANGLE);
     Sleep(0.2);
     encoderForward(40, (int)(0.5*COUNTS_PER_INCH));
     //S Turn Left into wall by satellite dish
@@ -210,17 +215,16 @@ void run_final() {
     //Turn left a little to avoid hitting the dish.
     //encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
     LCD.WriteRC("Before Bump", 13, 0);
-    encoderForwardWall(50, 50, 2*COUNTS_PER_INCH, 0.7);
-    bumpWall(50);
-    Sleep(0.2);
+    encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 1.2);
+    Sleep(0.3);
     LCD.WriteRC("After Bump", 13, 0);
-    yawServo.SetDegree(SAT_ANGLE/2);
     yawServo.SetDegree(SAT_ANGLE);
+    Sleep(0.2);
     LCD.WriteRC("After Arm", 13, 0);
-    encoderForward(-25, (int)(1.8*COUNTS_PER_INCH));
+    encoderForward(-26, (int)(1.8*COUNTS_PER_INCH));
     LCD.WriteRC("After Back", 13, 0);
     encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-    encoderForwardWall(-45, -45, 8*COUNTS_PER_INCH, 0.8);
+    encoderForwardWall(-45, -45, 8*COUNTS_PER_INCH, 1.0);
     yawServo.SetDegree(SAT_ANGLE + 20);
     LEDS[2].Toggle();
     if(!SPEED_MODE) {
@@ -251,7 +255,7 @@ void run_final() {
         accelForwardSin(10, 20, 50, 80, 4*COUNTS_PER_INCH);
         encoderForward(50, (int)(1.0*COUNTS_PER_INCH));
         accelForwardSin(60, 90, 10, 20, 4.0*COUNTS_PER_INCH);
-        encoderForward(60, (int)(10.6*COUNTS_PER_INCH));
+        encoderForward(60, (int)(11.0*COUNTS_PER_INCH));
         LEDS[3].Toggle();
         accelRightSin(20, 50, 135*COUNTS_PER_90_DEGREES/90); //This bothers me...
     }
@@ -307,9 +311,10 @@ void run_final() {
     leftMotor.Stop();
     rightMotor.Stop();
     Sleep(0.2);
-    encoderRightTurn(30, (int)(0.5*COUNTS_PER_90_DEGREES));
+    encoderRightTurn(30, (int)(40*COUNTS_PER_90_DEGREES/90));
     encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 0.8);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
+    Sleep(0.2);
     LEDS[6].Toggle();
 
     if(SPEED_MODE) {

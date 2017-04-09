@@ -45,7 +45,7 @@ enum LineStates {
 
 //CDS Cell readings for different lights with red filter.
 #define CDS_RED .5
-#define CDS_BLUE 1.8
+#define CDS_BLUE 1.7
 #define CDS_NONE 3.0
 
 //Base optosensor readings for each relevant surface.

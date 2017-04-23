@@ -65,27 +65,24 @@ void displayMenu() {
     //Coordinates for screen touches.
     float x,y;
     while (true) {
+            //Wait for the user to touch the screen
             LCD.Touch(&x,&y);
+            //Check if the final run button is pressed
             if(buttons[0].Pressed(x,y,0)) {
                 run_final();
-            } else if(buttons[1].Pressed(x,y,0)) {
+            } else if(buttons[1].Pressed(x,y,0)) { //Calibrate RPS
                 RPS.InitializeTouchMenu();
                 FEHIcon::DrawIconArray(buttons, 3, 2, 20, 20, 60, 60, labels, MIDNIGHTBLUE, TEXT_COLOR);
-            } else if(buttons[2].Pressed(x,y,0)) {
+            } else if(buttons[2].Pressed(x,y,0)) { //Currently shows off the servo motor
                 test_1();
-            } else if(buttons[3].Pressed(x,y,0)) {
+            } else if(buttons[3].Pressed(x,y,0)) { //Should blink LEDs sequentially
                 while(true) {
                     for(int i = 0; i < 8; i++) { //Couldn't find size of LEDS so just said 4.
                         Sleep(0.15);
                         LEDS[i].Toggle();
                     }
                 }
-                /*bumpWall(30);
-                encoderForward(-30, 10*COUNTS_PER_INCH);
-                encoderForward(30, 8*COUNTS_PER_INCH);
-                encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-                encoderForward(30, 8*COUNTS_PER_INCH);*/
-            } else if(buttons[4].Pressed(x,y,0)) {
+            } else if(buttons[4].Pressed(x,y,0)) { //Prints out available inputs to make sure code is working.
                 Sleep(1);
                 LCD.SetBackgroundColor(WHITE);
                 LCD.SetFontColor(BLACK);
@@ -117,7 +114,7 @@ void displayMenu() {
                     LCD.WriteRC(Battery.Voltage(), 11, 16);
                     LCD.WriteRC(TimeNow(), 12, 16);
                 }
-            } else if(buttons[5].Pressed(x,y,0)) {
+            } else if(buttons[5].Pressed(x,y,0)) { //Test running into walls to diagnose Wall glitch
                 yawServo.SetDegree(SAT_ANGLE);
                 Sleep(0.2);
                 encoderForward(40, (int)(0.5*COUNTS_PER_INCH));
@@ -131,11 +128,10 @@ void displayMenu() {
                 Sleep(0.3);
                 encoderForward(-30, -30, 8*COUNTS_PER_INCH);
             }
-
     }
-    return;
 }
 
+//Grabs core, deposits core in correct bucket based on color, and hits final button
 void flippy_thing(int color) {
     Sleep(0.2);
     switch(color) {
@@ -158,19 +154,21 @@ void flippy_thing(int color) {
         leftMotor.SetPercent(58);
         rightMotor.SetPercent(70);
         //Sleep 0.75
-    double startTime = TimeNow();
-        while(TimeNow() - startTime < 0.75) {
-            int index = ((int)((TimeNow()-startTime)/0.05))%8;
-            LEDS[index].Toggle();
+        //If there are leds plugged in, this oscillates them while the robot makes
+        //the final turn, else it just makes the last turn normally.
+        double startTime = TimeNow();
+            while(TimeNow() - startTime < 0.75) {
+                int index = ((int)((TimeNow()-startTime)/0.05))%8;
+                LEDS[index].Toggle();
+            }
+            leftMotor.SetPercent(70);
+            rightMotor.SetPercent(60);
+            startTime = TimeNow();
+            while(TimeNow() - startTime < 1.2) {
+                int index = ((int)((TimeNow()-startTime)/0.05))%8;
+                LEDS[index].Toggle();
+            }
         }
-        leftMotor.SetPercent(70);
-        rightMotor.SetPercent(60);
-        startTime = TimeNow();
-        while(TimeNow() - startTime < 1.2) {
-            int index = ((int)((TimeNow()-startTime)/0.05))%8;
-            LEDS[index].Toggle();
-        }
-    }
         encoderForward(-30, 4*COUNTS_PER_INCH);
         encoderForwardWall(40, 30, 8*COUNTS_PER_INCH, 2.0);
         break;
@@ -179,15 +177,19 @@ void flippy_thing(int color) {
         //Pick up core
         yawServo.SetDegree(LEVER_ANGLE - 5);
         Sleep(0.5);
+        //Move down ramp
         encoderForward(30, (int)(3.5*COUNTS_PER_INCH));
         accelForwardSin(40, 90, 20, 61, 10*COUNTS_PER_INCH - 15);
         encoderForward(47, 40, 12*COUNTS_PER_INCH);
+        //Flip around
         accelLeftSin(20, 80, 214*COUNTS_PER_90_DEGREES/90);
+        //Turn arm and move towards bucket
         yawServo.SetDegree(TURN_ANGLE);
         rollServo.SetPercent(-100.0);
         encoderForwardWall(-30, -30, 8*COUNTS_PER_90_DEGREES, 1.7);
         Sleep(0.1);
         rollServo.Stop();
+        //After depositing core, move to final button
         encoderForward(30, 30, 4*COUNTS_PER_INCH);
         encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
         encoderForwardWall(35, 35, 18*COUNTS_PER_INCH, 2.0);
@@ -198,19 +200,23 @@ void flippy_thing(int color) {
     }
 }
 
+//The main code for running the robot and completing the course.
 void run_final() {
     LCD.SetBackgroundColor(WHITE);
     LCD.SetFontColor(WHITE);
+    //Wait for start light to turn on.
     waitForLight();
     LEDS[0].Toggle();
-    //Around wall
+    //Move forwards out of the start
     accelForwardSin(20, 60, (int)(5.5*COUNTS_PER_INCH));
     encoderForward(20, (int)(1.5*COUNTS_PER_INCH));
     Sleep(0.1);
     accelLeftSin(20, 40, COUNTS_PER_90_DEGREES);
+    //Turn left and move to light
     encoderForward(20, (int)(2.2*COUNTS_PER_INCH));
     Sleep(0.3);
     displayColor();
+    //Save color in a variable for when we drop off the core.
     int color = getColorCDS();
     if(color < 1 || color > 2) {
         color = 1;
@@ -219,11 +225,9 @@ void run_final() {
     yawServo.SetDegree(SAT_ANGLE);
     Sleep(0.2);
     encoderForward(40, (int)(0.5*COUNTS_PER_INCH));
-    //S Turn Left into wall by satellite dish
+    //S curve left into the wall near the satellite dish
     accelForwardSin(30, 80, 45, 95, (int)(1.5*COUNTS_PER_INCH));
-    accelForwardSin(45, 95, 30, 80, (int)(1.3*COUNTS_PER_INCH));
-    //Turn left a little to avoid hitting the dish.
-    //encoderForwardWall(40, 45, 20*COUNTS_PER_INCH, 0.8);
+    //Hit wall: This is where the wall glitch happens. Reason unknown
     LCD.WriteRC("Before Bump", 13, 0);
     encoderForwardWall(35, 35, 28*COUNTS_PER_INCH, 2.5);
     Sleep(0.3);
@@ -251,35 +255,42 @@ void run_final() {
         accelForwardSin(45, 93, 40, 90, (int)(17.75*COUNTS_PER_INCH));
         LEDS[3].Toggle();
         Sleep(0.1);
-        //Back up into lever
+        //Back up to correct y position if needed.
         leftMotor.SetPercent(-15);
         rightMotor.SetPercent(-15);
         while(RPS.Y()> 48.5);
         leftMotor.Stop();
         rightMotor.Stop();
         yawServo.SetDegree(PARALLEL_ANGLE);
+        //Turn right to line up with lever.
         accelRightSin(20, 50, 22*COUNTS_PER_90_DEGREES/18);
     } else {
+        //Move arm up
         yawServo.SetDegree(SAT_ANGLE + 26);
+        //Move past satellite dish
         encoderForward(40, 2*COUNTS_PER_INCH);
+        //S curve up the ramp
         accelForwardSin(10, 20, 50, 80, 4*COUNTS_PER_INCH);
         encoderForward(50, (int)(1.0*COUNTS_PER_INCH));
         accelForwardSin(60, 90, 10, 20, 4.0*COUNTS_PER_INCH);
         encoderForward(60, (int)(11.0*COUNTS_PER_INCH));
         LEDS[3].Toggle();
+        //Turn right to line up with  lever
         accelRightSin(20, 50, 135*COUNTS_PER_90_DEGREES/90); //This bothers me...
     }
 
     LCD.WriteRC("Going to lever.", 13, 0);
 
     Sleep(0.1);
-    //Corrects left to hit lever
+    //Corrects left to make sure it hits the lever
     encoderForwardWall(-40, -40, 8*COUNTS_PER_INCH, 0.8);
     rightMotor.SetPercent(30);
     Sleep(0.1);
     rightMotor.Stop();
     encoderForwardWall(-35, -35, 8*COUNTS_PER_INCH, 0.5);
-    encoderForwardWall(20, 20, (int)(0.5*COUNTS_PER_INCH), 0.3);
+    //Move forwards slightly to get in position
+    encoderForwardWall(20, 20, (int)(0.5*COUNTS_PER_INCH), 0.3);\
+    //Hit lever and move forwards to flip it.
     yawServo.SetDegree(LEVER_ANGLE);
     encoderForward(30, 3*COUNTS_PER_INCH);
     yawServo.SetDegree(PARALLEL_ANGLE);
@@ -289,54 +300,59 @@ void run_final() {
     accelForwardSin(10, 40, 55, 100, 7*COUNTS_PER_INCH);
 
     LCD.WriteRC("Going to Button", 13, 0);
-    //To Button
+    //Keep button pressed
     encoderForwardWall(40, 40, 24*COUNTS_PER_INCH, 6.0);
     encoderForward(-40, (int)(1.0*COUNTS_PER_INCH));
     LEDS[5].Toggle();
 
     //Pull Core
-    //encoderRightTurn(40, COUNTS_PER_90_DEGREES + 20);
+
+    //Line up with the wall near the button
     accelRightSin(20, 45, 80*COUNTS_PER_90_DEGREES/90);
-    //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.6);
     bumpWall(50);
     Sleep(0.25);
     LCD.WriteRC("Pulling Core.", 13, 0);
-    //rightMotor.SetPercent(-20);
     //Turn claw into correct position
     yawServo.SetDegree(TURN_ANGLE);
     rollServo.SetPercent(50.0);
-    //Sleep(0.1);
-    //rightMotor.Stop();
-    //encoderForwardWall(50, 50, 10*COUNTS_PER_INCH, 0.2);
     //Back up into line
     encoderForward(-50, (int)(5.5*COUNTS_PER_INCH));
     rollServo.Stop();
     yawServo.SetDegree(0);
+    //Move backwards indefinitely
     LCD.WriteRC("Finding the Line", 13, 0);
     leftMotor.SetPercent(-20);
     rightMotor.SetPercent(-20);
     //Wait for center line to appear under optosensor
     while(centerOpto.Value() > CENTER_OPTO_ORANGE + 0.8);
+    //When the center line appears, move a little bit farther to line the claw up with the line.
     encoderForward(-25, (int)(1.55*COUNTS_PER_INCH));
     leftMotor.Stop();
     rightMotor.Stop();
     Sleep(0.2);
+    //Turn roughly 45 degrees to line up exactly with the core.
     encoderRightTurn(30, (int)(40*COUNTS_PER_90_DEGREES/90));
     encoderForwardWall(-40, -40, 20*COUNTS_PER_INCH, 0.8);
     encoderForward(30,(int)(0.4*COUNTS_PER_INCH));
     Sleep(0.2);
     LEDS[6].Toggle();
 
+    //If the robot is running the fast run, go into the fast run method.
     if(SPEED_MODE) {
         flippy_thing(color);
     }
+
+    //Else continue on with the slow code.
+
     //Pick up core
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(0.3);
+    //Curve down the ramp
     encoderForward(30, 4*COUNTS_PER_INCH);
     accelForwardSin(40, 90, 20, 65, 10*COUNTS_PER_INCH - 20);
     encoderForward(40, 14*COUNTS_PER_INCH);
     encoderLeftTurn(35, 2*COUNTS_PER_90_DEGREES/3);
+    //Turn facing the left side of the course to prepare to drop the core off.
     leftTurnRPS(350, 15);
 
 
@@ -350,14 +366,15 @@ void run_final() {
             yawServo.SetDegree(TURN_ANGLE);
             //Move 7 inches towards red bucket.
             encoderForward(-20, (int)(6.4*COUNTS_PER_INCH));
+            //Turn towards bucket
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES);
+            //Move until it hits the bucket
             encoderForwardWall(-20, -20, 7*COUNTS_PER_INCH, 2.0);
+            //Turn the arm until the core is dropped
             rollServo.SetPercent(-100.0);
             Sleep(1.8);
             rollServo.Stop();
-            /*encoderForward(20, 4*COUNTS_PER_INCH);
-            encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
-            encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.5);*/
+            //Curve into finish
             leftMotor.SetPercent(50);
             rightMotor.SetPercent(75);
             Sleep(0.8);
@@ -367,27 +384,32 @@ void run_final() {
         break;
         //BLUE
         case 2:
+            //Move arm into position to turn
             yawServo.SetDegree(TURN_ANGLE);
+            //Move back a little bit to get in the correct x position.
             encoderForward(-30, (int)(1.5*COUNTS_PER_INCH));
+            //Face towards bucket
             encoderLeftTurn(20, COUNTS_PER_90_DEGREES - 10);
+            //Move back until the robot hits the bucket
             encoderForwardWall(-30, -30, 7*COUNTS_PER_INCH, 2.0);
+            //Turn the arm until the core is dropped
             rollServo.SetPercent(-100.0);
             Sleep(1.8);
             rollServo.Stop();
+            //Move forward and run into the wall
             encoderForward(20, 4*COUNTS_PER_INCH);
             encoderLeftTurn(30, COUNTS_PER_90_DEGREES);
             encoderForwardWall(40, 40, 10*COUNTS_PER_INCH, 1.6);
         break;
     }
 
-    //Run into stop button.
+    //Run into stop button from wall
     encoderForward(-30, 1*COUNTS_PER_INCH);
     encoderRightTurn(25, COUNTS_PER_90_DEGREES);
     encoderForward(50, 10*COUNTS_PER_INCH);
-
-    //moveStartToCore();
 }
 
+//An optional test to make sure the motors are driving forward and straight.
 void motor_test() {
     LCD.WriteLine("Forward");
     encoderForward(30, 10*COUNTS_PER_INCH);
@@ -413,6 +435,8 @@ void motor_test() {
     play_music();
 }
 
+//A test specificalle made to show off the arm.
+//Moves the arm to different angles, rotates it, and rotates it back.
 void test_1() {
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(.5);
@@ -438,6 +462,7 @@ void test_1() {
     LCD.WriteLine("WUZZUP");
 }
 
+//Placeholder - currently runs performance test 4
 void test_2() {
     waitForLight();
     moveStartToSat();
@@ -529,15 +554,8 @@ void moveStartToCore() {
     yawServo.SetDegree(LEVER_ANGLE);
     Sleep(0.3);
     encoderForward(30, 9*COUNTS_PER_INCH);
-    //yawServo.SetDegree(0);
-    //follow_straight_line(-20);
-    //Sleep(0.5);
-    //yawServo.SetDegree(LEVER_ANGLE);
-    //encoderForward(20, 8*COUNTS_PER_INCH);
-    //encoderLeftTurn(20, COUNTS_PER_90_DEGREES/2);
     Sleep(0.5);
     encoderForward(20, (int)(0.5*COUNTS_PER_INCH));
-    //Sleep(0.5);
     //Line up against wall, turn towards ramp
     //Down ramp
     RPSMoveTo(30, 16, 30);
@@ -688,6 +706,7 @@ void follow_straight_line(int power) {
     }
 }
 
+//Code from line following exploration just in case
 void follow_curve() {
     rightMotor.SetPercent(BASE_MOTOR_POWER);
     leftMotor.SetPercent(BASE_MOTOR_POWER);
@@ -726,6 +745,7 @@ void follow_curve() {
     }
 }
 
+//Moves both motors forward by a specified power and distance.
 void encoderForward(int percent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -740,6 +760,7 @@ void encoderForward(int percent, int counts) {
     leftMotor.Stop();
 }
 
+//Moves both motors forward by a specified and distance, and power for each .
 void encoderForward(int leftPercent, int rightPercent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -747,7 +768,7 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
     rightMotor.SetPercent(rightPercent);
     leftMotor.SetPercent(leftPercent);
     float startTime = TimeNow();
-    //Moves on, just in case.
+    //Moves on after a few seconds, just in case.
     while((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
     }
 
@@ -755,6 +776,7 @@ void encoderForward(int leftPercent, int rightPercent, int counts) {
     leftMotor.Stop();
 }
 
+//Accelerates forward with velocity in the form of a sine wave.
 void accelForwardSin(float minPercent, float maxPercent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -762,6 +784,7 @@ void accelForwardSin(float minPercent, float maxPercent, int counts) {
     rightMotor.SetPercent(maxPercent);
     float startTime = TimeNow();
     while ((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0 < counts && TimeNow() - startTime < TIME_UNTIL_STOP) {
+        //set motor velocities according to a function based on their elapsed counts
         float motorPercent = (maxPercent - minPercent) * sin(((leftEncoder.Counts() + rightEncoder.Counts()) / 2.0) * 3.14159/((float)counts)) + minPercent;
         leftMotor.SetPercent(motorPercent);
         rightMotor.SetPercent(motorPercent);
@@ -770,6 +793,7 @@ void accelForwardSin(float minPercent, float maxPercent, int counts) {
     leftMotor.Stop();
 }
 
+//Accelerates with velocity in a sine wave, with independent powers for each wheel.
 void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -784,6 +808,7 @@ void accelForwardSin(float minPercentLeft, float maxPercentLeft, float minPercen
     leftMotor.Stop();
 }
 
+//Accelerates to the maximum percent in sine wave form, stays at that speed for highCounts counts, and then decellerates down to minPercent.
 void accelForwardStay(float minPercentLeft, float maxPercentLeft, float minPercentRight, float maxPercentRight, int counts, int highCounts) {
     int highStart = (counts - highCounts)/2;
     int highEnd = counts - highStart;
@@ -791,15 +816,16 @@ void accelForwardStay(float minPercentLeft, float maxPercentLeft, float minPerce
     rightMotor.SetPercent(minPercentRight);
     while((leftEncoder.Counts()+rightEncoder.Counts())/2 < counts) {
         int elapsedCounts = (leftEncoder.Counts()+rightEncoder.Counts())/2;
+        //Stay at the maximum for highCounts number of counts.
         if(elapsedCounts > highStart && elapsedCounts < highEnd) {
             leftMotor.SetPercent(maxPercentLeft);
             rightMotor.SetPercent(maxPercentRight);
-        } else if(elapsedCounts < highStart) {
+        } else if(elapsedCounts < highStart) { //If starting, sine accelerate
             float motorPercentLeft = (maxPercentLeft - minPercentLeft) * sin((float)elapsedCounts * 3.14159/((float)highStart*2)) + minPercentLeft;
             float motorPercentRight = (maxPercentRight - minPercentRight) * sin((float)elapsedCounts * 3.14159/((float)highStart*2)) + minPercentRight;
             leftMotor.SetPercent(motorPercentLeft);
             rightMotor.SetPercent(motorPercentRight);
-        } else {
+        } else { //If ending, sine decelerate
             float motorPercentLeft = (maxPercentLeft - minPercentLeft) * sin(((float)(elapsedCounts - highCounts)) * 3.14159/((float)highStart*2)) + minPercentLeft;
             float motorPercentRight = (maxPercentRight - minPercentRight) * sin(((float)(elapsedCounts - highCounts)) * 3.14159/((float)highStart*2)) + minPercentRight;
             leftMotor.SetPercent(motorPercentLeft);
@@ -810,6 +836,7 @@ void accelForwardStay(float minPercentLeft, float maxPercentLeft, float minPerce
     leftMotor.Stop();
 }
 
+//A left turn using sine wave acceleration
 void accelLeftSin(int minPercent, int maxPercent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -824,6 +851,7 @@ void accelLeftSin(int minPercent, int maxPercent, int counts) {
     leftMotor.Stop();
 }
 
+//A right turn using sine wave acceleration
 void accelRightSin(int minPercent, int maxPercent, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -838,10 +866,12 @@ void accelRightSin(int minPercent, int maxPercent, int counts) {
     leftMotor.Stop();
 }
 
+//Bump into the wall at a specified motor power, and then return.
 void bumpWall(int percent) {
     double startTime = TimeNow();
+    //Wait for both bump switches to be pressed or half a second to elapse.
     while((left_switch.Value() || right_switch.Value()) && TimeNow() - startTime < 0.5) {
-
+        //If only one pressed is pressed, pivot so that both are pressed.
         if(left_switch.Value()) {
             leftMotor.SetPercent(percent);
         } else {
@@ -876,6 +906,7 @@ void encoderForwardWall(int leftPercent, int rightPercent, int counts, double ba
     leftMotor.Stop();
 }
 
+//Basic stationary left turn using shaft encoding.
 void encoderLeftTurn(int motorPower, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -888,6 +919,7 @@ void encoderLeftTurn(int motorPower, int counts) {
     leftMotor.Stop();
 }
 
+//Basic stationary right turn using shaft encoding.
 void encoderRightTurn(int motorPower, int counts) {
     rightEncoder.ResetCounts();
     leftEncoder.ResetCounts();
@@ -901,14 +933,16 @@ void encoderRightTurn(int motorPower, int counts) {
     leftMotor.Stop();
 }
 
-//CCW Turn
+//CCW Turn using RPS
 void leftTurnRPS(float finalHeading, float power) {
     float startHeading = RPS.Heading();
+    //Check if the finalHeading is near zero to avoid edge cases.
     if(finalHeading < 1.0) {
         finalHeading = 1.0;
     }
     leftMotor.SetPercent(-power);
     rightMotor.SetPercent(power);
+    //Make sure robot goes past heading even if it has to pass zero degrees
     if(finalHeading < startHeading) {
         while(RPS.Heading() < finalHeading || RPS.Heading() > startHeading - 2.);
     } else {
@@ -918,14 +952,16 @@ void leftTurnRPS(float finalHeading, float power) {
     leftMotor.SetPercent(0);
 }
 
-//Clockwise turn
+//Clockwise turn using RPS
 void rightTurnRPS(float finalHeading, float power) {
     float startHeading = RPS.Heading();
+    //Check if the finalHeading is near zero to avoid edge cases.
     if(finalHeading < 1.0) {
         finalHeading = 359.9;
     }
     leftMotor.SetPercent(power);
     rightMotor.SetPercent(-power);
+    //Make sure robot goes past heading even if it has to pass zero degrees
     if(finalHeading > startHeading) {
         while(RPS.Heading() > finalHeading || RPS.Heading() < startHeading + 2.);
     } else {
@@ -935,15 +971,18 @@ void rightTurnRPS(float finalHeading, float power) {
     leftMotor.SetPercent(0);
 }
 
+//Selects optimal direction to turn and turns to the specified heading.
 void turnRPS(float finalHeading, float power) {
-    LCD.WriteRC(RPS.Heading(), 1, 1); //225
-    LCD.WriteRC(finalHeading, 2, 1);  //90
+    LCD.WriteRC(RPS.Heading(), 1, 1);
+    LCD.WriteRC(finalHeading, 2, 1);
     bool over180 = false;
+    //Check if the robot is over 180 degrees, if so, make sure it turns the corret direction.
     float divAngle = 180. + RPS.Heading();
     if(divAngle > 359.9) {
         divAngle -= 360.;
         over180 = true;
     }
+    //Turn correct direction
     if(over180) {
         if(finalHeading < RPS.Heading() && finalHeading > divAngle) {
             rightTurnRPS(finalHeading, power);
@@ -959,6 +998,7 @@ void turnRPS(float finalHeading, float power) {
     }
 }
 
+//Turn to a specified point and then move towards it at the specified power.
 void RPSMoveTo(float x, float y, float power) {
     RPSPointTowards(x, y, 20);
     leftMotor.SetPercent(power);
@@ -969,6 +1009,7 @@ void RPSMoveTo(float x, float y, float power) {
     LCD.WriteRC(sqrt((x-RPS.X())*(x-RPS.X()) + (y-RPS.Y())*(y-RPS.Y())), 10, 4);
 }
 
+//Point towards a specified point using trig.
 void RPSPointTowards(float x, float y, int power) {
     float curX = RPS.X();
     float curY = RPS.Y();
@@ -980,6 +1021,7 @@ void RPSPointTowards(float x, float y, int power) {
 
 }
 
+//Point away from a specified point using trig.
 void RPSPointAway(float x, float y, int power) {
     float curX = RPS.X();
     float curY = RPS.Y();
@@ -992,17 +1034,20 @@ void RPSPointAway(float x, float y, int power) {
     turnRPS(theta, power);
 }
 
+//Wait for the CdS cell to turn on.
 void waitForLight() {
     while(cdsCell.Value() > 1 + CDS_RED);
 }
 
+//Display the color read from the optosensor on the screen.
 void displayColor() {
+    //Check if the CdS cell reads under the max red value.
     if(cdsCell.Value() < 1.0 + CDS_RED) {
         LCD.Clear(RED);
         LCD.SetBackgroundColor(RED);
         LCD.SetFontColor(BLUE);
         LCD.WriteRC("ITS RED! REEEEEDDDDDDDDD!!!!",0,1);
-    } else {
+    } else { //Defaults to blue, but still prints what it reads on the screen.
         if(cdsCell.Value() < 1.0 + CDS_BLUE) {
             LCD.Clear(BLUE);
            LCD.SetBackgroundColor(BLUE);
@@ -1019,6 +1064,7 @@ void displayColor() {
 
 //1 for red, 2 for blue. 0 For none.
 int getColorCDS() {
+    //returns red if under max red value, else it defaults to blue.
     if(cdsCell.Value() < 1.0 + CDS_RED) {
         return 1;
     } else if(cdsCell.Value() < 1.0 + CDS_BLUE) {
@@ -1028,6 +1074,7 @@ int getColorCDS() {
     }
 }
 
+//Plays the beverly hills cop theme. Just in case.
 void play_music() {
     Buzzer.Tone(FEHBuzzer::A4, 200);
     Buzzer.Tone(FEHBuzzer::C5, 200);
